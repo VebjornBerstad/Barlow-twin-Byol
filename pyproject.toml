@@ -1,0 +1,54 @@
+[build-system]
+build-backend = "flit_core.buildapi"
+requires = ["flit_core >=3.7.1,<4"]
+
+[project]
+name = "swarm"
+version = "0.1.0"
+description = ""
+requires-python = ">=3.10"
+classifiers = [ "Private :: Do Not Upload" ]
+dependencies = [
+    "dvc",
+    "dvclive >= 2.0.0",
+    "librosa",
+    "lightning",
+    "optuna",
+    "numpy",
+    "pydub",
+    "torch",
+    "torchaudio",
+    "torchmetrics",
+    "torchvision",
+    "tqdm",
+]
+
+[project.optional-dependencies]
+lint = [
+    "autopep8",
+    "flake8",
+    "isort",
+    "mypy",
+]
+test = [
+    "pytest",
+    "pytest-cov",
+]
+dev = [
+    "pre-commit",
+    "swarm[test]",
+    "swarm[lint]",
+    "ipykernel",
+    "ipywidgets",
+    "jupyter",
+]
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-rA -q"
+testpaths = [
+    "tests"
+]
+
+[tool.flit.module]
+name = "swarm"
