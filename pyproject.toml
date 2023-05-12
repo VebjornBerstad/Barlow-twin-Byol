@@ -11,6 +11,7 @@ classifiers = [ "Private :: Do Not Upload" ]
 dependencies = [
     "dvc",
     "dvclive >= 2.0.0",
+    "kaggle",
     "librosa",
     "lightning",
     "optuna",

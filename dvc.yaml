@@ -1,0 +1,23 @@
+stages:
+  fetch_audioset_train:
+    cmd: "
+      python -m swarm.fetch_kaggle_dataset
+        --kaggle_dataset zfturbo/audioset
+        --temp_dir ./temp/audioset_train/
+        --data_dir ./datasets/audioset_train/
+    "
+    deps:
+      - src/swarm/fetch_kaggle_dataset.py
+    # outs:
+    #   - datasets/audioset_train
+  fetch_gtzan:
+    cmd: "
+      python -m swarm.fetch_kaggle_dataset
+        --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
+        --temp_dir ./temp/gtzan/
+        --data_dir ./datasets/gtzan/
+    "
+    deps:
+      - src/swarm/fetch_kaggle_dataset.py
+    # outs:
+    #   - datasets/gtzan

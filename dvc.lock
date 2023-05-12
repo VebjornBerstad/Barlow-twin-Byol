@@ -1,0 +1,23 @@
+schema: '2.0'
+stages:
+  fetch_audioset:
+    cmd: ' python -m swarm.fetch_audioset --kaggle_dataset zfturbo/audioset --temp_dir
+      ./temp/ --data_dir ./datasets/ '
+    deps:
+    - path: src/swarm/fetch_audioset.py
+      md5: 573b5d7c464e90c1cfee579fc092ecdc
+      size: 1170
+  fetch_gtzan:
+    cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
+      --temp_dir ./temp/gtzan/ --data_dir ./datasets/gtzan/ '
+    deps:
+    - path: src/swarm/fetch_kaggle_dataset.py
+      md5: 310cfa786beb7e6046fcfaa0246dc5fa
+      size: 1420
+  fetch_audioset_train:
+    cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset zfturbo/audioset
+      --temp_dir ./temp/audioset_train/ --data_dir ./datasets/audioset_train/ '
+    deps:
+    - path: src/swarm/fetch_kaggle_dataset.py
+      md5: 310cfa786beb7e6046fcfaa0246dc5fa
+      size: 1420
