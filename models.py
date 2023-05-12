@@ -49,45 +49,126 @@ class BarlowTwinsLoss(nn.Module):
         off_diag = self.off_diagonal_ele(cross_corr).pow_(2).sum()
 
         return on_diag + self.lambda_coeff * off_diag
-    
-class ConvNet(nn.Module):
-    def __init__(self, in_channels=1, out_features=128):
-        super(ConvNet, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding='same')
-        self.batchnorm1 = nn.BatchNorm2d(64)
-        self.relu1 = nn.LeakyReLU()
-        self.pool1 = nn.MaxPool2d(kernel_size=2, stride=2)
-        
-        self.conv2 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding='same')
-        self.batchnorm2 = nn.BatchNorm2d(64)
-        self.relu2 = nn.LeakyReLU()
-        self.pool2 = nn.MaxPool2d(kernel_size=2, stride=2)
 
-        # self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1, padding='same')
-        # self.batchnorm3 = nn.BatchNorm2d(64)
-        # self.relu3 = nn.LeakyReLU()
-        # self.pool3 = nn.MaxPool2d(kernel_size=2, stride=2)
-        
-        self.fc = nn.Linear(64 * 16 * 24, out_features)
-        # self.batch = nn.BatchNorm1d(out_features)
+class ResidualBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, stride=1, downsample=None):
+        super(ResidualBlock, self).__init__()
+
+        self.conv1 = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=False)
+        self.bn1 = nn.BatchNorm2d(out_channels)
+        self.relu = nn.LeakyReLU()
+        self.conv2 = nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1, bias=False)
+        self.bn2 = nn.BatchNorm2d(out_channels)
+        self.downsample = downsample
 
     def forward(self, x):
-        x = self.pool1(self.relu1(self.batchnorm1(self.conv1(x))))
-        x = self.pool2(self.relu2(self.batchnorm2(self.conv2(x))))
-        # x = self.pool3(self.relu3(self.batchnorm3(self.conv3(x))))
-        x = self.fc(x.view(x.size(0), -1))
+        residual = x
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.conv2(out)
+        out = self.bn2(out)
+        if self.downsample:
+            residual = self.downsample(x)
+        out += residual
+        out = self.relu(out)
+        return out
+
+class Autoencoder(nn.Module):
+    def __init__(self, emb_dim_size: int, X_train_example: torch.Tensor, device: torch.device | str):
+        super().__init__()
+
+        self.emb_dim_size = emb_dim_size
+
+        # Define downsample layers for the residual blocks
+        downsample1 = nn.Sequential(
+            nn.Conv2d(1, 16, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm2d(16)
+        )
+        downsample2 = nn.Sequential(
+            nn.Conv2d(16, 32, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm2d(32)
+        )
+        downsample3 = nn.Sequential(
+            nn.Conv2d(32, 64, kernel_size=1, stride=2, bias=False),
+            nn.BatchNorm2d(64)
+        )
+
+        enc_conv = nn.Sequential(
+            nn.BatchNorm2d(1),
+            ResidualBlock(1, 16, stride=2, downsample=downsample1),
+            ResidualBlock(16, 16),
+            ResidualBlock(16, 32, stride=2, downsample=downsample2),
+            ResidualBlock(32, 32),
+            ResidualBlock(32, 64, stride=2, downsample=downsample3),
+            ResidualBlock(64, 64),
+            nn.Flatten()
+        ).to(device)
+
+        enc_conv_res = enc_conv(X_train_example.to(device))
+
+        enc_linear = nn.Sequential(
+            nn.Linear(enc_conv_res.size(1), self.emb_dim_size),
+            nn.BatchNorm1d(self.emb_dim_size),
+            # nn.Tanh(),
+        )
+
+        self.encoder = nn.Sequential(enc_conv, enc_linear)
+
+    def forward(self, x: torch.Tensor) -> tuple[torch.Tensor, torch.Tensor]:
+        if x.ndim == 3:
+            x = x.unsqueeze(1)
+        z = self.encoder(x)
+        return z
+
+class ConvNet(nn.Module):
+    def __init__(self, X_train_example: torch.Tensor,  device: torch.device | str, emb_dim_size: int,in_channels=1):
+        super(ConvNet, self).__init__()
+
+        self.emb_dim_size = emb_dim_size
+
+        enc_conv = nn.Sequential(
+            nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding='same'),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+        
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding='same'),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+            nn.Flatten(),
+        ).to(device)
+
+        enc_conv_res = enc_conv(X_train_example.to(device))
+
+        fc = nn.Sequential(
+            # nn.Linear(64*16*24, 2048),
+            # nn.LeakyReLU(),
+            # nn.Dropout(0.3),
+            nn.Linear(enc_conv_res.size(1), emb_dim_size),
+            # nn.LeakyReLU(),
+        )
+
+        self.encoder = nn.Sequential(
+            enc_conv,
+            fc,
+        )  
+
+    def forward(self, x):
+        x = self.encoder(x)
         return x
 
 
 class ProjectionHead(nn.Module):
-    def __init__(self, input_dim=2048, hidden_dim=2048, output_dim=4096):
+    def __init__(self, input_dim=2048, hidden_dim=4096, output_dim=8192):
         super().__init__()
 
         self.projection_head = nn.Sequential(
             nn.Linear(input_dim, hidden_dim, bias=False),
             nn.BatchNorm1d(hidden_dim),
             nn.LeakyReLU(),
-            nn.Dropout(0.3),
+            # nn.Dropout(0.3),
             nn.Linear(hidden_dim, output_dim, bias=False),
             # nn.BatchNorm1d(hidden_dim),
             # nn.LeakyReLU(),
@@ -118,7 +199,6 @@ class barlowBYOL(pl.LightningModule):
                  tau=0.99,
                  learning_rate=1e-4,
                  warmup_epochs=10,
-                 max_epochs=200,
                  ):
         
         super().__init__()
@@ -127,7 +207,6 @@ class barlowBYOL(pl.LightningModule):
         self.tau = tau
         self.learning_rate = learning_rate
         self.warmup_epochs = warmup_epochs
-        self.max_epochs = max_epochs
 
         self.train_iters_per_epoch = num_training_samples // batch_size
 
@@ -274,7 +353,7 @@ class LinearEvaluationCallback(pl.Callback):
 
         x, y = self.extract_batch(batch, pl_module.device)
 
-        # pl_module.eval()
+        pl_module.eval()
 
         with torch.no_grad():
             features = pl_module.forward(x)
@@ -283,7 +362,7 @@ class LinearEvaluationCallback(pl.Callback):
             preds = pl_module.linear_classifier(features)
             loss = F.cross_entropy(preds, y)
 
-        # pl_module.train()
+        pl_module.train()
         
         pred_labels = torch.argmax(preds, dim=1)
         acc = accuracy(pred_labels, y, task="multiclass", num_classes=10)

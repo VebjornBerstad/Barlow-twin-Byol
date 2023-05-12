@@ -62,27 +62,6 @@ def create_test_set(test_folder, src_folder):
                 src_sample_path = os.path.join(class_path, sample)
                 dest_sample_path = os.path.join(test_class_folder, sample)
                 shutil.move(src_sample_path, dest_sample_path)
-
-
-class MelSpectrogramExtractor:
-    def __init__(self, target_sample_rate=16000, n_fft=1024, n_mels=64, time=192, fmin=60, fmax=7800):
-        self.target_sample_rate = target_sample_rate
-        self.n_fft = n_fft
-        self.n_mels = n_mels
-        num_samples = 10 * self.target_sample_rate
-        self.hop_length = (num_samples - self.n_fft) // (time - 1)
-        self.mel_spectrogram = torchaudio.transforms.MelSpectrogram(sample_rate=self.target_sample_rate,
-                                                n_fft=self.n_fft,
-                                                n_mels=self.n_mels,
-                                                hop_length=self.hop_length,
-                                                f_min=60, 
-                                                f_max=7800, 
-                                                power=2
-                                                )
-
-    def extract(self, waveform):
-        mel_spec = self.mel_spectrogram(waveform)
-        return mel_spec
     
 def preprocess_audio(waveform, sample_rate):
     # Load audio and resample to 16 kHz
@@ -94,10 +73,9 @@ def preprocess_audio(waveform, sample_rate):
     mel_spectrogram = torchaudio.transforms.MelSpectrogram(sample_rate=16000, n_fft=n_fft, hop_length=hop_length, n_mels=64, f_min=60, f_max=7800)(waveform)
 
     # Convert to log-scaled mel-spectrogram
-    log_mel_spectrogram = torchaudio.transforms.AmplitudeToDB()(mel_spectrogram)
+    log_mel_spectrogram = torchaudio.transforms.AmplitudeToDB(stype='power')(mel_spectrogram)
 
     return log_mel_spectrogram
-
 
 class convert_wav_mel():
 
@@ -120,21 +98,6 @@ class convert_wav_mel():
             if waveform.shape[0] > 1:
                 waveform = torch.mean(waveform, dim=0, keepdim=True)
 
-            # if sample_rate != self.target_sample_rate:
-            #     resampler = Resample(orig_freq=sample_rate, new_freq=self.target_sample_rate, dtype=waveform.dtype)
-            #     waveform = resampler(waveform)
-
-            # waveform_length = waveform.shape[1]
-            # if waveform_length > self.target_sec:
-            #     waveform = waveform[:, :self.target_sec]
-            # elif waveform_length < self.target_sec:
-            #     padding = torch.zeros(1, self.target_sec - waveform_length)
-            #     waveform = torch.cat((waveform, padding), dim=1)
-            # create_mel = MelSpectrogramExtractor(target_sample_rate=self.target_sample_rate)
-            # mel_spec = MelSpectrogram(sample_rate=self.target_sample_rate, n_fft=1024, n_mels=64)(waveform)
-            # mel_spec = create_mel.extract(waveform)
-            # log_mel_spec = AmplitudeToDB()(mel_spec)
-            # log_mel_spec = LogMelSpectrogram()(waveform)
             log_mel_spec = preprocess_audio(waveform=waveform, sample_rate=sample_rate)
             torch.save(log_mel_spec, save_file_path)
 
@@ -146,14 +109,14 @@ class convert_wav_mel():
             dir_path = os.path.join(root_dir, dirname)
             if os.path.isdir(dir_path):
                 new_folder_path = os.path.join(save_dir, dirname)
-                # if os.path.exists(new_folder_path):
-                #     shutil.rmtree(new_folder_path)
-                # os.mkdir(new_folder_path)
+                if os.path.exists(new_folder_path):
+                    shutil.rmtree(new_folder_path)
+                os.mkdir(new_folder_path)
                 self.convert_folder(root_dir=dir_path, save_dir=new_folder_path)
             else:
-                # if os.path.exists(save_dir):
-                #     shutil.rmtree(save_dir)
-                # os.mkdir(save_dir)
+                if os.path.exists(save_dir):
+                    shutil.rmtree(save_dir)
+                os.mkdir(save_dir)
                 self.convert_folder(root_dir=root_dir, save_dir=save_dir)
                 return
 
