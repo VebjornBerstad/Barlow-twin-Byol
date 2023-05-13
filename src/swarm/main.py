@@ -1,11 +1,12 @@
 import torchvision.transforms as transforms
-from .augmentations import RandomCropWidth
-from .dataset import AudioDataset, AudiosetDataset
-from .models import ConvNet, LinearEvaluationCallback, barlowBYOL
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
+
+from .augmentations import RandomCropWidth
+from .dataset import AudioDataset, AudiosetDataset
+from .models import ConvNet, LinearEvaluationCallback, barlowBYOL
 
 
 def main():
