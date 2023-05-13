@@ -5,12 +5,52 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Python: Current File",
+            "name": "Download GTZAN",
             "type": "python",
             "request": "launch",
-            "program": "${file}",
-            "console": "integratedTerminal",
-            "justMyCode": true
-        }
+            "module": "swarm.fetch_kaggle_dataset",
+            "justMyCode": true,
+            "args": [
+                "--kaggle_dataset", "andradaolteanu/gtzan-dataset-music-genre-classification",
+                "--temp_dir", "./temp/gtzan/",
+                "--output_dir", "./temp/gtzan_wavs/",
+                "--unzip", "True",
+            ]
+        },
+        {
+            "name": "Prep GTZAN",
+            "type": "python",
+            "request": "launch",
+            "module": "swarm.preprocess_gtzan",
+            "justMyCode": true,
+            "args": [
+                "--input_dir", "./temp/gtzan_wavs/",
+                "--output_dir_train", "./datasets/gtzan_train_mel_split/",
+                "--output_dir_val", "./datasets/gtzan_val_mel_split/",
+
+            ]
+        },
+        {
+            "name": "Prep Audioset Train",
+            "type": "python",
+            "request": "launch",
+            "module": "swarm.preprocess_audioset",
+            "justMyCode": true,
+            "args": [
+                "--input_zip", "./temp/audioset_train/audioset.zip",
+                "--output_dir_lms", "./datasets/audioset_train_mel_split/",
+                "--output_dir_metadata", "./datasets/audioset_metadata/",
+                "--temp_dir", "./temp/audioset_train/",
+            ]
+        },
+        {
+            "name": "Run main",
+            "type": "python",
+            "request": "launch",
+            "module": "swarm.main",
+            "justMyCode": true,
+            "args": [
+            ]
+        },
     ]
 }
