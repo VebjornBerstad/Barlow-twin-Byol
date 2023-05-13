@@ -6,8 +6,9 @@ from shutil import copytree, rmtree
 import torch
 import torchaudio
 from pydub import AudioSegment
-from torchaudio.transforms import AmplitudeToDB, MelSpectrogram, Resample
 from tqdm import tqdm
+
+# from torchaudio.transforms import AmplitudeToDB, MelSpectrogram, Resample
 
 
 def split_wav_files(src_folder, dest_folder, time_length, hop_length):
@@ -94,7 +95,7 @@ class convert_wav_mel():
             file = os.path.join(root_dir, filename)
             save_filename = filename[:-3] + 'pt'
             save_file_path = os.path.join(save_dir, save_filename)
-            waveform, sample_rate = torchaudio.load(file)
+            waveform, sample_rate = torchaudio.load(file)  # type: ignore
 
             if waveform.shape[1] == 0:
                 print(f"Skipping empty waveform in file: {filename}")
