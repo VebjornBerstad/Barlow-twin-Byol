@@ -10,14 +10,14 @@ from tqdm import tqdm
 @dataclass
 class Config:
     kaggle_dataset: str
-    data_dir: Path
+    output_dir: Path
     temp_dir: Path
 
 
 def parse_args() -> Config:
     parser = argparse.ArgumentParser()
     parser.add_argument('--kaggle_dataset', type=str, help='Kaggle dataset name')
-    parser.add_argument('--data_dir', type=Path, help='Directory to save the dataset')
+    parser.add_argument('--output_dir', type=Path, help='Directory to save the dataset')
     parser.add_argument('--temp_dir', type=Path, help='Temporary directory to download the dataset')
     args = parser.parse_args()
     return Config(**vars(args))
@@ -46,7 +46,7 @@ def main():
         file_list = zip_ref.namelist()
 
         for file in tqdm(file_list, desc="Unzipping dataset files"):
-            zip_ref.extract(file, config.data_dir)
+            zip_ref.extract(file, config.output_dir)
 
 
 if __name__ == '__main__':

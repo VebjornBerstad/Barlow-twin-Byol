@@ -4,7 +4,7 @@ stages:
       python -m swarm.fetch_kaggle_dataset
         --kaggle_dataset zfturbo/audioset
         --temp_dir ./temp/audioset_train/
-        --data_dir ./datasets/audioset_train/
+        --output_dir ./datasets/audioset_train/
     "
     deps:
       - src/swarm/fetch_kaggle_dataset.py
@@ -15,9 +15,17 @@ stages:
       python -m swarm.fetch_kaggle_dataset
         --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
         --temp_dir ./temp/gtzan/
-        --data_dir ./datasets/gtzan/
+        --output_dir ./temp/gtzan_wavs/
+      && python -m swarm.preprocess_gtzan
+        --input_dir ./temp/gtzan_wavs/
+        --output_dir_train ./datasets/gtzan_train_mel_split/
+        --output_dir_val ./datasets/gtzan_val_mel_split/
+      && rm -r ./temp/gtzan_wavs/
     "
     deps:
       - src/swarm/fetch_kaggle_dataset.py
-    # outs:
-    #   - datasets/gtzan
+      - src/swarm/preprocess_audio.py
+      - src/swarm/preprocess_gtzan.py
+    outs:
+      - ./datasets/gtzan_train_mel_split/
+      - ./datasets/gtzan_val_mel_split/

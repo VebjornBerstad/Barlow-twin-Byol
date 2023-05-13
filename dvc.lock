@@ -9,11 +9,25 @@ stages:
       size: 1170
   fetch_gtzan:
     cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
-      --temp_dir ./temp/gtzan/ --data_dir ./datasets/gtzan/ '
+      --temp_dir ./temp/gtzan/ --output_dir ./temp/gtzan_wavs/ && python -m swarm.preprocess_gtzan
+      --input_dir ./temp/gtzan_wavs/ --output_dir_train ./datasets/gtzan_train_mel_split/
+      --output_dir_val ./datasets/gtzan_val_mel_split/ && rm -r ./temp/gtzan_wavs/ '
     deps:
     - path: src/swarm/fetch_kaggle_dataset.py
-      md5: 310cfa786beb7e6046fcfaa0246dc5fa
-      size: 1420
+      md5: 2ca3f62628ca26c82d9cc17a6ccb1cc6
+      size: 1427
+    - path: src/swarm/preprocess_gtzan.py
+      md5: 541af693d364bc08161bd965a98a44eb
+      size: 4469
+    outs:
+    - path: ./datasets/gtzan_train_mel_split/
+      md5: ade811a8f9519116884d25f1f319abb5.dir
+      size: 614026016
+      nfiles: 2389
+    - path: ./datasets/gtzan_val_mel_split/
+      md5: 4c1cf9661c630a8819a607f6dfb54f15.dir
+      size: 153956296
+      nfiles: 599
   fetch_audioset_train:
     cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset zfturbo/audioset
       --temp_dir ./temp/audioset_train/ --data_dir ./datasets/audioset_train/ '
