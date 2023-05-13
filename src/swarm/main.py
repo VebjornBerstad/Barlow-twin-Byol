@@ -1,28 +1,23 @@
-from models import barlowBYOL, LinearEvaluationCallback, ConvNet, Autoencoder
-from dataset import AudioDataset, AudiosetDataset
-
-import torchvision.transforms as transforms
-from torch.utils.data import DataLoader, random_split
-from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint
-
 import torch
 import torch.nn as nn
-
-from torchvision.models import resnet18
-
+import torchvision.transforms as transforms
 from augmentations import RandomCropWidth
-
+from dataset import AudioDataset, AudiosetDataset
+from models import Autoencoder, ConvNet, LinearEvaluationCallback, barlowBYOL
+from pytorch_lightning import Trainer
+from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
+from torch.utils.data import DataLoader, random_split
+from torchvision.models import resnet18
 
 
 def main():
 
     sample_rate = 16000
     transform = transforms.Compose([
-        RandomCropWidth(target_frames=96), #96
-        ])
-    
+        RandomCropWidth(target_frames=96),  # 96
+    ])
+
     train_dir = './datasets/gtzan_train_mel_split'
     val_dir = './datasets/gtzan_val_mel_split'
     audio_dir = './datasets/audioset_train_mel_split'
@@ -35,7 +30,7 @@ def main():
     gtzan_val_dataset = AudioDataset(val_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
 
     # Split
-    train_size = int(0.9 * len(audioset_dataset))    
+    train_size = int(0.9 * len(audioset_dataset))
     valid_size = len(audioset_dataset) - train_size
     audioset_train_dataset, audioset_val_dataset = random_split(audioset_dataset, [train_size, valid_size])
 
@@ -59,7 +54,7 @@ def main():
     # encoder = Autoencoder(emb_dim_size=emb_dim_size, X_train_example=X_train_example, device='cuda')
 
     logger = TensorBoardLogger("logs", name="Barlow_BYOL")
-    
+
     barlow_byol = barlowBYOL(encoder=encoder, tau=0.99, encoder_out_dim=emb_dim_size, num_training_samples=len(audioset_dataset), batch_size=batch_size)
 
     linear_evaluation = LinearEvaluationCallback(encoder_output_dim=emb_dim_size, num_classes=10, train_dataloader=gtzan_train_dataloader, val_dataloader=gtzan_val_dataloader)
@@ -71,7 +66,7 @@ def main():
         max_epochs=500,
         callbacks=[linear_evaluation, checkpoint_callback],
         logger=logger,
-        )
+    )
     barlow_byol_trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
 
 

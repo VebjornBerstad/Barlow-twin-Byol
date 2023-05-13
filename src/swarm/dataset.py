@@ -1,16 +1,14 @@
 import os
-import torch
-from torch.utils.data import Dataset
-
-import torch.nn.functional as F
-import torchaudio as TA
-from torchaudio.transforms import Resample
-
 import random
 
+import torch
+import torch.nn.functional as F
+import torchaudio as TA
+from conv_wav_mel import preprocess_audio
+from torch.utils.data import Dataset
+from torchaudio.transforms import Resample
 from tqdm import tqdm
 
-from conv_wav_mel import preprocess_audio
 
 class AudioDataset(Dataset):
     def __init__(self, main_dir, target_sample_rate, unit_sec, transform=None):
@@ -47,7 +45,7 @@ class AudioDataset(Dataset):
         # if length_adj > 0:
         #     half_adj = int(length_adj // 2)
         #     wav = F.pad(waveform, (half_adj, int(length_adj - half_adj)))
-        
+
         # length_adj = len(waveform) - self.unit_length
         # start = random.randint(0, length_adj) if length_adj > 0 else 0
         # waveform = waveform[start:start + self.unit_length]
@@ -92,7 +90,7 @@ class AudiosetDataset(Dataset):
         # if length_adj > 0:
         #     half_adj = int(length_adj // 2)
         #     wav = F.pad(waveform, (half_adj, int(length_adj - half_adj)))
-        
+
         # length_adj = len(waveform) - self.unit_length
         # start = random.randint(0, length_adj) if length_adj > 0 else 0
         # waveform = waveform[start:start + self.unit_length]

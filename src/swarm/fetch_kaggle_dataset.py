@@ -1,8 +1,9 @@
-import kaggle
-from pathlib import Path
 import argparse
-from dataclasses import dataclass
 import zipfile
+from dataclasses import dataclass
+from pathlib import Path
+
+import kaggle
 from tqdm import tqdm
 
 
