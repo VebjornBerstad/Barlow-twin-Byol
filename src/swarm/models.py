@@ -2,13 +2,14 @@ from copy import deepcopy
 from functools import partial
 from typing import Sequence, Union
 
-import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from augmentations import aug_pipeline, mel_aug
+from torch.utils.data import DataLoader
 from torchmetrics.functional import accuracy
+
+from .augmentations import aug_pipeline, mel_aug
 
 
 def fn(warmup_steps, step):
@@ -278,8 +279,8 @@ class LinearEvaluationCallback(pl.Callback):
             self,
             encoder_output_dim: int,
             num_classes: int,
-            train_dataloader: torch.utils.data.DataLoader,
-            val_dataloader: torch.utils.data.DataLoader,
+            train_dataloader: DataLoader,
+            val_dataloader: DataLoader,
     ):
         super().__init__()
         self.optimizer: torch.optim.Optimizer
