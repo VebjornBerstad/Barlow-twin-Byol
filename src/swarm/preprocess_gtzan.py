@@ -90,7 +90,7 @@ def main() -> None:
     dvc_gtzan_config = parse_dvc_gtzan_params()
     dvc_spectrogram_config = parse_dvc_spectrogram_config()
 
-    device = 'cpu'
+    device = T.device('cuda' if T.cuda.is_available() else 'cpu')
 
     root = config.input_dir / "Data" / "genres_original"
     genre_folders = [genre for genre in root.iterdir() if genre.is_dir()]

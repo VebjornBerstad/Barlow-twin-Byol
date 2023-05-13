@@ -9,23 +9,27 @@ stages:
       size: 1170
   fetch_gtzan:
     cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
-      --temp_dir ./temp/gtzan/ --output_dir ./temp/gtzan_wavs/ && python -m swarm.preprocess_gtzan
-      --input_dir ./temp/gtzan_wavs/ --output_dir_train ./datasets/gtzan_train_mel_split/
-      --output_dir_val ./datasets/gtzan_val_mel_split/ && rm -r ./temp/gtzan_wavs/ '
+      --temp_dir ./temp/gtzan/ --output_dir ./temp/gtzan_wavs/ --unzip True && python
+      -m swarm.preprocess_gtzan --input_dir ./temp/gtzan_wavs/ --output_dir_train
+      ./datasets/gtzan_train_mel_split/ --output_dir_val ./datasets/gtzan_val_mel_split/
+      && rm -r ./temp/gtzan_wavs/ && rm -r ./temp/gtzan/ '
     deps:
     - path: src/swarm/fetch_kaggle_dataset.py
-      md5: 2ca3f62628ca26c82d9cc17a6ccb1cc6
-      size: 1427
+      md5: af56b495259ffe90711eab09b2c02220
+      size: 2032
+    - path: src/swarm/preprocess_audio.py
+      md5: 8788ef282ffb37c052ca2513b9fe15db
+      size: 2868
     - path: src/swarm/preprocess_gtzan.py
-      md5: 541af693d364bc08161bd965a98a44eb
-      size: 4469
+      md5: de701710daff5add829bfe2005fe2ced
+      size: 4516
     outs:
     - path: ./datasets/gtzan_train_mel_split/
-      md5: ade811a8f9519116884d25f1f319abb5.dir
+      md5: f0a0b953017edcfaef3068a137deebfd.dir
       size: 614026016
       nfiles: 2389
     - path: ./datasets/gtzan_val_mel_split/
-      md5: 4c1cf9661c630a8819a607f6dfb54f15.dir
+      md5: eb67d22808e9fa2de92fb269a2dde142.dir
       size: 153956296
       nfiles: 599
   fetch_audioset_train:
