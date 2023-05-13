@@ -6,18 +6,23 @@ stages:
         --temp_dir ./temp/audioset_train/
         --unzip False
       && python -m swarm.preprocess_audioset
-        --input_zip ./temp/audioset_train_wavs/
-        --output_dir ./datasets/audioset_train_mel_split/
+        --input_zip ./temp/audioset_train/audioset.zip
+        --output_dir_lms ./datasets/audioset_train_mel_split/
+        --output_dir_metadata ./datasets/audioset_metadata/
+        --temp_dir ./temp/audioset_train/
     "
     deps:
       - src/swarm/fetch_kaggle_dataset.py
       - src/swarm/preprocess_audio.py
       - src/swarm/preprocess_audioset.py
     outs:
-      - datasets/audioset_train_mel_split/
+      - ./datasets/audioset_train_mel_split/
+      - ./datasets/audioset_metadata/class_labels_indices.csv
+      - ./datasets/audioset_metadata/train.csv
   fetch_gtzan:
     cmd: "
-      python -m swarm.fetch_kaggle_dataset
+      rm -rf ./temp/gtzan/
+      && python -m swarm.fetch_kaggle_dataset
         --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
         --temp_dir ./temp/gtzan/
         --output_dir ./temp/gtzan_wavs/
@@ -26,8 +31,7 @@ stages:
         --input_dir ./temp/gtzan_wavs/
         --output_dir_train ./datasets/gtzan_train_mel_split/
         --output_dir_val ./datasets/gtzan_val_mel_split/
-      && rm -r ./temp/gtzan_wavs/
-      && rm -r ./temp/gtzan/
+      && rm -rf ./temp/gtzan/
     "
     deps:
       - src/swarm/fetch_kaggle_dataset.py
