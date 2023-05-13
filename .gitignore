@@ -5,6 +5,7 @@
 /logs/
 /.cache/
 /temp/
+/test_rikard.ipynb
 
 ### Python ###
 # Byte-compiled / optimized / DLL files
