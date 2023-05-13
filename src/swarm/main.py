@@ -1,14 +1,11 @@
-import torch
-import torch.nn as nn
 import torchvision.transforms as transforms
-from augmentations import RandomCropWidth
-from dataset import AudioDataset, AudiosetDataset
-from models import Autoencoder, ConvNet, LinearEvaluationCallback, barlowBYOL
+from .augmentations import RandomCropWidth
+from .dataset import AudioDataset, AudiosetDataset
+from .models import ConvNet, LinearEvaluationCallback, barlowBYOL
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
-from torchvision.models import resnet18
 
 
 def main():
@@ -57,7 +54,12 @@ def main():
 
     barlow_byol = barlowBYOL(encoder=encoder, tau=0.99, encoder_out_dim=emb_dim_size, num_training_samples=len(audioset_dataset), batch_size=batch_size)
 
-    linear_evaluation = LinearEvaluationCallback(encoder_output_dim=emb_dim_size, num_classes=10, train_dataloader=gtzan_train_dataloader, val_dataloader=gtzan_val_dataloader)
+    linear_evaluation = LinearEvaluationCallback(
+        encoder_output_dim=emb_dim_size,
+        num_classes=10,
+        train_dataloader=gtzan_train_dataloader,
+        val_dataloader=gtzan_val_dataloader
+    )
     checkpoint_callback = ModelCheckpoint(every_n_epochs=50, save_top_k=-1, save_last=True)
 
     barlow_byol_trainer = Trainer(
