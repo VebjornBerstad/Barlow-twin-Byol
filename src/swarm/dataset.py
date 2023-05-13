@@ -33,6 +33,8 @@ class AudioDataset(Dataset):
     def __getitem__(self, idx):
         # waveform, sample_rate = TA.load(self.file_list[idx])
         x = torch.load(self.file_list[idx])
+        if x.ndim == 2:
+            x = x.unsqueeze(0)
 
         # if waveform.shape[0] > 1:
         #     waveform = torch.mean(waveform, dim=0, keepdim=True)
@@ -78,6 +80,8 @@ class AudiosetDataset(Dataset):
         # Load audio file
         # waveform, sample_rate = TA.load(self.file_list[idx])
         x = torch.load(self.file_list[idx])
+        if x.ndim == 2:
+            x = x.unsqueeze(0)
 
         # if waveform.shape[0] > 1:
         #     waveform = torch.mean(waveform, dim=0, keepdim=True)
