@@ -25,13 +25,13 @@ stages:
       size: 4516
     outs:
     - path: ./datasets/gtzan_train_mel_split/
-      md5: f0a85831e48e730cae09238b151ae376.dir
-      size: 614026016
-      nfiles: 2389
+      md5: 29b8e9af248ad3cd25818b6f436e9bb9.dir
+      size: 614540046
+      nfiles: 2391
     - path: ./datasets/gtzan_val_mel_split/
-      md5: 8b19fc8c00ed4d2e6ecad1b2302f705c.dir
-      size: 153956296
-      nfiles: 599
+      md5: e33d44b6f76adee8896366dd7367c07e.dir
+      size: 153442266
+      nfiles: 597
   fetch_audioset_train:
     cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset zfturbo/audioset
       --temp_dir ./temp/audioset_train/ --unzip False && python -m swarm.preprocess_audioset
