@@ -4,13 +4,13 @@ import random
 from dataclasses import dataclass
 from pathlib import Path
 
-import dvc.api as dvc_api
 import torch as T
 import torchaudio as TA
 from tqdm import tqdm
 
 from swarm.config import parse_dvc_spectrogram_config
 from swarm.preprocess.tools import convert_waveform_to_lms, create_audio_segments
+from swarm.config import parse_dvc_gtzan_config
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,24 +30,6 @@ def parse_args() -> Config:
     parser.add_argument('--output_dir_val', type=Path, help='The output directory to save the validation dataset.')
     args = parser.parse_args()
     return Config(**vars(args))
-
-
-@dataclass
-class DvcParams:
-    train_val_split: float
-    segment_length_sec: float
-    hop_length_sec: float
-
-
-def parse_dvc_gtzan_params() -> DvcParams:
-    params = dvc_api.params_show()
-    gtzan_params = params['datasets']['gtzan']
-
-    return DvcParams(
-        train_val_split=gtzan_params['train_val_split'],
-        segment_length_sec=gtzan_params['segment_length_sec'],
-        hop_length_sec=gtzan_params['hop_length_sec'],
-    )
 
 
 def preprocess_files(
@@ -87,7 +69,7 @@ def preprocess_files(
 
 def main() -> None:
     config = parse_args()
-    dvc_gtzan_config = parse_dvc_gtzan_params()
+    dvc_gtzan_config = parse_dvc_gtzan_config()
     dvc_spectrogram_config = parse_dvc_spectrogram_config()
 
     device = T.device('cuda' if T.cuda.is_available() else 'cpu')

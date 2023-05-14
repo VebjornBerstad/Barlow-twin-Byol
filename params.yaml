@@ -10,6 +10,7 @@ datasets:
     train_val_split: 0.8
     segment_length_sec: 10.0
     hop_length_sec: 10.0
+    num_classes: 10
   
 training:
   batch_size: 512

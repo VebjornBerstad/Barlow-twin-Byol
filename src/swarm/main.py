@@ -10,6 +10,7 @@ from swarm.models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
 
 from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config, parse_dvc_model_config
 from dataclasses import dataclass
+from swarm.config import parse_dvc_gtzan_config
 
 from pathlib import Path
 import argparse
@@ -36,6 +37,7 @@ def main():
     training_config = parse_dvc_training_config()
     augmentation_config = parse_dvc_augmentation_config()
     model_config = parse_dvc_model_config()
+    gtzan_config = parse_dvc_gtzan_config()
 
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
@@ -72,7 +74,7 @@ def main():
 
     linear_evaluation = LinearOnlineEvaluationCallback(
         encoder_output_dim=model_config.emb_dim_size,
-        num_classes=10,
+        num_classes=gtzan_config.num_classes,
         train_dataloader=gtzan_train_dataloader,
         val_dataloader=gtzan_val_dataloader
     )
