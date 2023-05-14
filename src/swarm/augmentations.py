@@ -100,7 +100,7 @@ class MixupBYOLA(nn.Module):
         log_mixup_exp: Use log-mixup-exp to mix if this is True, or mix without notion of log-scale.
     """
 
-    def __init__(self, ratio=0.2, n_memory=2048, log_mixup_exp=True):
+    def __init__(self, ratio: float, n_memory: int, log_mixup_exp=True):
         super().__init__()
         self.ratio = ratio
         self.n = n_memory
@@ -112,20 +112,21 @@ class MixupBYOLA(nn.Module):
         alpha = self.ratio * np.random.random()
         if self.memory_bank:
             # get z as a mixing background sound
-            z = self.memory_bank[np.random.randint(len(self.memory_bank))]
+            z = self.memory_bank[np.random.randint(len(self.memory_bank))].to(x.device)
             # mix them
             mixed = log_mixup_exp(x, z, 1. - alpha) if self.log_mixup_exp \
                 else alpha * z + (1. - alpha) * x
         else:
             mixed = x
         # update memory bank
-        self.memory_bank = (self.memory_bank + [x])[-self.n:]
+        self.memory_bank = (self.memory_bank + [x.cpu()])[-self.n:]
 
         return mixed.to(torch.float)
 
 
 def aug_pipeline(
     mixup_ratio: float = 0.4,
+    mixup_memory_size: int = 2048,
     linear_fader_gain: float = 1.0,
     rrc_crop_scale_min: float = 1.0,
     rrc_crop_scale_max: float = 1.5,
@@ -135,7 +136,7 @@ def aug_pipeline(
     rrc_time_scale_max: float = 1.5,
 ):
     return nn.Sequential(
-        MixupBYOLA(ratio=mixup_ratio),
+        MixupBYOLA(ratio=mixup_ratio, n_memory=mixup_memory_size),
         RandomResizeCrop(
             virtual_crop_scale=(rrc_crop_scale_min, rrc_crop_scale_max),
             freq_scale=(rrc_freq_scale_min, rrc_freq_scale_max),

@@ -24,6 +24,7 @@ augmentations:
     target_frames: 96
   mixup:
     ratio: 0.4
+    memory_size: 2048
   linear_fader:
     gain: 1.0
   random_resize_crop:

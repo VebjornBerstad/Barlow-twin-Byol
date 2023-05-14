@@ -49,6 +49,7 @@ def parse_dvc_training_config() -> TrainingConfig:
 class AugmentationConfig:
     rcw_target_frames: int
     mixup_ratio: float
+    mixup_memory_size: int
     linear_fader_gain: float
     rrc_crop_scale_min: float
     rrc_crop_scale_max: float
@@ -70,6 +71,7 @@ def parse_dvc_augmentation_config() -> AugmentationConfig:
     return AugmentationConfig(
         rcw_target_frames=rcw['target_frames'],
         mixup_ratio=mixup['ratio'],
+        mixup_memory_size=mixup['memory_size'],
         linear_fader_gain=linear_fader['gain'],
         rrc_crop_scale_min=rrc['crop_scale']["min"],
         rrc_crop_scale_max=rrc['crop_scale']["max"],

@@ -64,6 +64,7 @@ def main():
 
     augmentations = aug_pipeline(
         mixup_ratio=augmentation_config.mixup_ratio,
+        mixup_memory_size=augmentation_config.mixup_memory_size,
         linear_fader_gain=augmentation_config.linear_fader_gain,
         rrc_crop_scale_min=augmentation_config.rrc_crop_scale_min,
         rrc_crop_scale_max=augmentation_config.rrc_crop_scale_max,
