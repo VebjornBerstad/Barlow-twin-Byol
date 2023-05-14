@@ -1,20 +1,23 @@
 stages:
   fetch_audioset_train:
     cmd: "
-      python -m swarm.fetch_kaggle_dataset
+      rm -rf 
+        ./datasets/audioset_train_mel_split/
+        ./datasets/audioset_metadata/
+      && python -m swarm.download.kaggle
         --kaggle_dataset zfturbo/audioset
         --temp_dir ./temp/audioset_train/
         --unzip False
-      && python -m swarm.preprocess_audioset
+      && python -m swarm.preprocess.audioset
         --input_zip ./temp/audioset_train/audioset.zip
         --output_dir_lms ./datasets/audioset_train_mel_split/
         --output_dir_metadata ./datasets/audioset_metadata/
         --temp_dir ./temp/audioset_train/
     "
     deps:
-      - src/swarm/fetch_kaggle_dataset.py
-      - src/swarm/preprocess_audio.py
-      - src/swarm/preprocess_audioset.py
+      - src/swarm/download/kaggle.py
+      - src/swarm/preprocess/tools.py
+      - src/swarm/preprocess/audioset.py
       - src/swarm/config.py
     outs:
       - ./datasets/audioset_train_mel_split/
@@ -22,22 +25,25 @@ stages:
       - ./datasets/audioset_metadata/train.csv
   fetch_gtzan:
     cmd: "
-      rm -rf ./temp/gtzan/
-      && python -m swarm.fetch_kaggle_dataset
+      rm -rf 
+        ./temp/gtzan/
+        ./datasets/gtzan_train_mel_split/
+        ./datasets/gtzan_val_mel_split/
+      && python -m swarm.download.kaggle
         --kaggle_dataset andradaolteanu/gtzan-dataset-music-genre-classification
         --temp_dir ./temp/gtzan/
         --output_dir ./temp/gtzan_wavs/
         --unzip True
-      && python -m swarm.preprocess_gtzan
+      && python -m swarm.preprocess.gtzan
         --input_dir ./temp/gtzan_wavs/
         --output_dir_train ./datasets/gtzan_train_mel_split/
         --output_dir_val ./datasets/gtzan_val_mel_split/
       && rm -rf ./temp/gtzan/
     "
     deps:
-      - src/swarm/fetch_kaggle_dataset.py
-      - src/swarm/preprocess_audio.py
-      - src/swarm/preprocess_gtzan.py
+      - src/swarm/download/kaggle.py
+      - src/swarm/preprocess/tools.py
+      - src/swarm/preprocess/gtzan.py
       - src/swarm/config.py
     outs:
       - ./datasets/gtzan_train_mel_split/
