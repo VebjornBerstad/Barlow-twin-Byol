@@ -15,6 +15,9 @@ training:
   batch_size: 512
   val_split: 0.1
 
+model:
+  emb_dim_size: 4096
+
 augmentations:
   random_crop_width:
     target_frames: 96

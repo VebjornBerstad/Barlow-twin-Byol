@@ -53,3 +53,17 @@ def parse_dvc_augmentation_config() -> AugmentationConfig:
     return AugmentationConfig(
         rcw_target_frames=rcw['target_frames'],
     )
+
+
+@dataclass
+class ModelConfig:
+    emb_dim_size: int
+
+
+def parse_dvc_model_config() -> ModelConfig:
+    params = dvc_api.params_show()
+    model_params = params['model']
+
+    return ModelConfig(
+        emb_dim_size=model_params['emb_dim_size'],
+    )
