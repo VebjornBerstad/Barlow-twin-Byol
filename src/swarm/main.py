@@ -80,7 +80,7 @@ def main():
         val_dataloader=gtzan_val_dataloader
     )
     checkpoint_callback = ModelCheckpoint(every_n_epochs=10, save_top_k=-1, save_last=True)
-    logger = TensorBoardLogger("logs", name="Barlow_BYOL")
+    logger = TensorBoardLogger("logs", name="BarlowTwins")
 
     barlow_byol_trainer = Trainer(
         devices=1,
