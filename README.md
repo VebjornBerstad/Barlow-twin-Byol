@@ -15,9 +15,6 @@ Install the project by running:
 # Install a Python environment.
 # pip install -e .[dev]  # Use this for development.
 python3 install -e .
-
-# Initialzie the DVC project.
-dvc init
 ```
 
 ## Usage
