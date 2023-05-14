@@ -1,0 +1,12 @@
+
+spectrogram:
+  target_sample_rate: 16000
+  n_mels: 64
+  f_min: 60
+  f_max: 7800
+
+datasets:
+  gtzan:
+    train_val_split: 0.8
+    segment_length_sec: 10.0
+    hop_length_sec: 10.0

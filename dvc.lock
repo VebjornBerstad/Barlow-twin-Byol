@@ -1,0 +1,60 @@
+schema: '2.0'
+stages:
+  fetch_audioset:
+    cmd: ' python -m swarm.fetch_audioset --kaggle_dataset zfturbo/audioset --temp_dir
+      ./temp/ --data_dir ./datasets/ '
+    deps:
+    - path: src/swarm/fetch_audioset.py
+      md5: 573b5d7c464e90c1cfee579fc092ecdc
+      size: 1170
+  fetch_gtzan:
+    cmd: ' rm -rf ./temp/gtzan/ && python -m swarm.fetch_kaggle_dataset --kaggle_dataset
+      andradaolteanu/gtzan-dataset-music-genre-classification --temp_dir ./temp/gtzan/
+      --output_dir ./temp/gtzan_wavs/ --unzip True && python -m swarm.preprocess_gtzan
+      --input_dir ./temp/gtzan_wavs/ --output_dir_train ./datasets/gtzan_train_mel_split/
+      --output_dir_val ./datasets/gtzan_val_mel_split/ && rm -rf ./temp/gtzan/ '
+    deps:
+    - path: src/swarm/fetch_kaggle_dataset.py
+      md5: 90770559818f46d2f15eca8885cd0d79
+      size: 2013
+    - path: src/swarm/preprocess_audio.py
+      md5: 8788ef282ffb37c052ca2513b9fe15db
+      size: 2868
+    - path: src/swarm/preprocess_gtzan.py
+      md5: de701710daff5add829bfe2005fe2ced
+      size: 4516
+    outs:
+    - path: ./datasets/gtzan_train_mel_split/
+      md5: 29b8e9af248ad3cd25818b6f436e9bb9.dir
+      size: 614540046
+      nfiles: 2391
+    - path: ./datasets/gtzan_val_mel_split/
+      md5: e33d44b6f76adee8896366dd7367c07e.dir
+      size: 153442266
+      nfiles: 597
+  fetch_audioset_train:
+    cmd: ' python -m swarm.fetch_kaggle_dataset --kaggle_dataset zfturbo/audioset
+      --temp_dir ./temp/audioset_train/ --unzip False && python -m swarm.preprocess_audioset
+      --input_zip ./temp/audioset_train/audioset.zip --output_dir_lms ./datasets/audioset_train_mel_split/
+      --output_dir_metadata ./datasets/audioset_metadata/ --temp_dir ./temp/audioset_train/ '
+    deps:
+    - path: src/swarm/fetch_kaggle_dataset.py
+      md5: 90770559818f46d2f15eca8885cd0d79
+      size: 2013
+    - path: src/swarm/preprocess_audio.py
+      md5: 8788ef282ffb37c052ca2513b9fe15db
+      size: 2868
+    - path: src/swarm/preprocess_audioset.py
+      md5: 6e91139040aeddd898053ca4859e8de1
+      size: 3429
+    outs:
+    - path: ./datasets/audioset_metadata/class_labels_indices.csv
+      md5: 68c0b5c199d6cc789852b144cc3ab500
+      size: 14675
+    - path: ./datasets/audioset_metadata/train.csv
+      md5: ededd922be3267a2ef83457d5f252e95
+      size: 948332
+    - path: ./datasets/audioset_train_mel_split/
+      md5: 63a51864fe2e9101a5d735dc0a67fb88.dir
+      size: 5001004406
+      nfiles: 19642

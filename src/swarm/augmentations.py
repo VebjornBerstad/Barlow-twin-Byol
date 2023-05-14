@@ -1,9 +1,10 @@
+import random
+
+import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-import numpy as np
-import random
 
 class RandomCropWidth(nn.Module):
     def __init__(self, target_frames):
@@ -19,7 +20,8 @@ class RandomCropWidth(nn.Module):
             padding = torch.zeros(1, 64, self.target_frames - num_frames)
             log_mel_spectrogram = torch.cat((log_mel_spectrogram, padding), dim=-1)
         return log_mel_spectrogram
-    
+
+
 class PostNormalize(nn.Module):
     def __init__(self, eps=1e-5):
         super(PostNormalize, self).__init__()
@@ -34,7 +36,8 @@ class PostNormalize(nn.Module):
         # std = std/(max_val-min_val)
         x_normalized = (x - mean) / std
         return x_normalized
-    
+
+
 class RandomLinearFader(nn.Module):
     def __init__(self, gain=1.0):
         super().__init__()
@@ -46,6 +49,7 @@ class RandomLinearFader(nn.Module):
         slope = torch.linspace(head, tail, T, dtype=lms.dtype).reshape(1, T).to(lms.device)
         y = lms + slope
         return y
+
 
 class RandomResizeCrop(nn.Module):
     def __init__(self, virtual_crop_scale=(1.0, 1.5), freq_scale=(0.6, 1.5), time_scale=(0.6, 1.5)):
@@ -69,7 +73,7 @@ class RandomResizeCrop(nn.Module):
     def forward(self, lms):
         virtual_crop_size = [int(s * c) for s, c in zip(lms.shape[-2:], self.virtual_crop_scale)]
         virtual_crop_area = (torch.zeros((lms.shape[0], lms.shape[1], virtual_crop_size[0], virtual_crop_size[1]))
-                            .to(torch.float).to(lms.device))
+                             .to(torch.float).to(lms.device))
         lh, lw = virtual_crop_area.shape[-2:]
         h, w = lms.shape[-2:]
         x, y = (lw - w) // 2, (lh - h) // 2
@@ -77,14 +81,16 @@ class RandomResizeCrop(nn.Module):
         i, j, h, w = self.get_params(virtual_crop_area.shape[-2:], lms.shape[-2:], self.time_scale, self.freq_scale)
         crop = virtual_crop_area[:, :, i:i+h, j:j+w]
         lms = F.interpolate(crop, size=lms.shape[-2:],
-            mode=self.interpolation, align_corners=True)
+                            mode=self.interpolation, align_corners=True)
         return lms.to(torch.float)
+
 
 def log_mixup_exp(xa, xb, alpha):
     xa = xa.exp()
     xb = xb.exp()
     x = alpha * xa + (1. - alpha) * xb
     return torch.log(x + torch.finfo(x.dtype).eps)
+
 
 class MixupBYOLA(nn.Module):
     """Mixup for BYOL-A.
@@ -109,13 +115,14 @@ class MixupBYOLA(nn.Module):
             z = self.memory_bank[np.random.randint(len(self.memory_bank))]
             # mix them
             mixed = log_mixup_exp(x, z, 1. - alpha) if self.log_mixup_exp \
-                    else alpha * z + (1. - alpha) * x
+                else alpha * z + (1. - alpha) * x
         else:
             mixed = x
         # update memory bank
         self.memory_bank = (self.memory_bank + [x])[-self.n:]
 
         return mixed.to(torch.float)
+
 
 def aug_pipeline(sample_rate=44100):
     return nn.Sequential(
@@ -124,6 +131,7 @@ def aug_pipeline(sample_rate=44100):
         RandomLinearFader(),
         PostNormalize(),
     )
+
 
 def mel_aug(sample_rate=44100):
     return nn.Sequential(

@@ -1,12 +1,15 @@
 import os
+import random
 import shutil
+from shutil import copytree, rmtree
+
 import torch
 import torchaudio
-from torchaudio.transforms import MelSpectrogram, Resample, AmplitudeToDB
-from tqdm import tqdm
-import random
-from shutil import copytree, rmtree
 from pydub import AudioSegment
+from tqdm import tqdm
+
+# from torchaudio.transforms import AmplitudeToDB, MelSpectrogram, Resample
+
 
 def split_wav_files(src_folder, dest_folder, time_length, hop_length):
     # Copy the original folder structure to the destination folder
@@ -22,7 +25,7 @@ def split_wav_files(src_folder, dest_folder, time_length, hop_length):
                 dest_subfolder = os.path.join(dest_folder, os.path.relpath(subdir, src_folder))
 
                 # Split the .wav file
-                audio = AudioSegment.from_wav(src_file_path) #pydub
+                audio = AudioSegment.from_wav(src_file_path)  # pydub
                 audio_length_ms = len(audio)
                 time_length_ms = time_length * 1000
                 hop_length_ms = hop_length * 1000
@@ -36,6 +39,7 @@ def split_wav_files(src_folder, dest_folder, time_length, hop_length):
                 # Remove the original .wav file from the destination folder
                 os.remove(os.path.join(dest_subfolder, file))
 
+
 def create_test_set(test_folder, src_folder):
 
     # Create the test folder if it doesn't exist
@@ -44,25 +48,26 @@ def create_test_set(test_folder, src_folder):
     # Iterate through the subfolders in the dataset folder
     for class_folder in os.listdir(src_folder):
         class_path = os.path.join(src_folder, class_folder)
-        
+
         # Check if the current item is a directory (class folder)
         if os.path.isdir(class_path):
             # Create a new subfolder for the current class in the test folder
             test_class_folder = os.path.join(test_folder, class_folder)
             os.makedirs(test_class_folder, exist_ok=True)
-            
+
             # Get a list of all samples in the class folder
             samples = [f for f in os.listdir(class_path) if os.path.isfile(os.path.join(class_path, f))]
-            
+
             # Randomly select 20 samples from the list
             samples_to_move = random.sample(samples, 20)
-            
+
             # Move the selected samples to the corresponding test folder
             for sample in samples_to_move:
                 src_sample_path = os.path.join(class_path, sample)
                 dest_sample_path = os.path.join(test_class_folder, sample)
                 shutil.move(src_sample_path, dest_sample_path)
-    
+
+
 def preprocess_audio(waveform, sample_rate):
     # Load audio and resample to 16 kHz
     waveform = torchaudio.transforms.Resample(orig_freq=sample_rate, new_freq=16000)(waveform)
@@ -77,6 +82,7 @@ def preprocess_audio(waveform, sample_rate):
 
     return log_mel_spectrogram
 
+
 class convert_wav_mel():
 
     def __init__(self, target_sample_rate, target_sec):
@@ -89,7 +95,7 @@ class convert_wav_mel():
             file = os.path.join(root_dir, filename)
             save_filename = filename[:-3] + 'pt'
             save_file_path = os.path.join(save_dir, save_filename)
-            waveform, sample_rate = torchaudio.load(file)
+            waveform, sample_rate = torchaudio.load(file)  # type: ignore
 
             if waveform.shape[1] == 0:
                 print(f"Skipping empty waveform in file: {filename}")
@@ -119,5 +125,3 @@ class convert_wav_mel():
                 os.mkdir(save_dir)
                 self.convert_folder(root_dir=root_dir, save_dir=save_dir)
                 return
-
-

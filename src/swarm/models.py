@@ -1,17 +1,16 @@
-from augmentations import aug_pipeline, mel_aug
-
-import numpy as np
+from copy import deepcopy
 from functools import partial
+from typing import Sequence, Union
 
+import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.utils.data import DataLoader
 from torchmetrics.functional import accuracy
 
-import pytorch_lightning as pl
+from .augmentations import aug_pipeline, mel_aug
 
-from copy import deepcopy
-from typing import Sequence, Union
 
 def fn(warmup_steps, step):
     if step < warmup_steps:
@@ -22,6 +21,7 @@ def fn(warmup_steps, step):
 
 def linear_warmup_decay(warmup_steps):
     return partial(fn, warmup_steps)
+
 
 class BarlowTwinsLoss(nn.Module):
     def __init__(self, batch_size, lambda_coeff=5e-3, z_dim=128):
@@ -50,6 +50,7 @@ class BarlowTwinsLoss(nn.Module):
 
         return on_diag + self.lambda_coeff * off_diag
 
+
 class ResidualBlock(nn.Module):
     def __init__(self, in_channels, out_channels, stride=1, downsample=None):
         super(ResidualBlock, self).__init__()
@@ -73,6 +74,7 @@ class ResidualBlock(nn.Module):
         out += residual
         out = self.relu(out)
         return out
+
 
 class Autoencoder(nn.Module):
     def __init__(self, emb_dim_size: int, X_train_example: torch.Tensor, device: torch.device | str):
@@ -121,8 +123,9 @@ class Autoencoder(nn.Module):
         z = self.encoder(x)
         return z
 
+
 class ConvNet(nn.Module):
-    def __init__(self, X_train_example: torch.Tensor,  device: torch.device | str, emb_dim_size: int,in_channels=1):
+    def __init__(self, X_train_example: torch.Tensor,  device: torch.device | str, emb_dim_size: int, in_channels=1):
         super(ConvNet, self).__init__()
 
         self.emb_dim_size = emb_dim_size
@@ -132,7 +135,7 @@ class ConvNet(nn.Module):
             nn.BatchNorm2d(64),
             nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
-        
+
             nn.Conv2d(64, 64, kernel_size=3, stride=1, padding='same'),
             nn.BatchNorm2d(64),
             nn.LeakyReLU(),
@@ -153,7 +156,7 @@ class ConvNet(nn.Module):
         self.encoder = nn.Sequential(
             enc_conv,
             fc,
-        )  
+        )
 
     def forward(self, x):
         x = self.encoder(x)
@@ -191,8 +194,8 @@ class ProjectionHead(nn.Module):
 
 
 class barlowBYOL(pl.LightningModule):
-    def __init__(self, 
-                 encoder, 
+    def __init__(self,
+                 encoder,
                  encoder_out_dim,
                  num_training_samples,
                  batch_size,
@@ -200,7 +203,7 @@ class barlowBYOL(pl.LightningModule):
                  learning_rate=1e-4,
                  warmup_epochs=10,
                  ):
-        
+
         super().__init__()
         self.augment = aug_pipeline()
 
@@ -214,10 +217,10 @@ class barlowBYOL(pl.LightningModule):
         self.target = deepcopy(self.online)
 
         self.loss = BarlowTwinsLoss(batch_size=64)
-    
+
     def forward(self, x):
         return self.online[0](x)
-    
+
     def training_step(self, batch, batch_idx):
         x = batch[0]
 
@@ -228,14 +231,14 @@ class barlowBYOL(pl.LightningModule):
             x1, x2 = self.augment(x), self.augment(x)
             enc_target_y = self.target[0](x2)
             target_y = self.target[1](enc_target_y)
-            
+
         enc_y = self.online[0](x1)
         y = self.online[1](enc_y)
         loss = self.loss(y, target_y)
         self.log("train_loss", loss, on_step=True, on_epoch=False)
 
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         self.online.eval()
         self.target.eval()
@@ -249,7 +252,7 @@ class barlowBYOL(pl.LightningModule):
         self.log("val_loss", loss, on_step=False, on_epoch=True)
         self.online.train()
         self.target.train()
-    
+
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.online.parameters(), lr=self.learning_rate)
 
@@ -265,7 +268,7 @@ class barlowBYOL(pl.LightningModule):
         }
 
         return [optimizer], [scheduler]
-        
+
     def on_after_backward(self):
         for online_param, target_param in zip(self.online.parameters(), self.target.parameters()):
             target_param.data.mul_(self.tau).add_(online_param.data, alpha=(1 - self.tau))
@@ -276,16 +279,16 @@ class LinearEvaluationCallback(pl.Callback):
             self,
             encoder_output_dim: int,
             num_classes: int,
-            train_dataloader: torch.utils.data.DataLoader,
-            val_dataloader: torch.utils.data.DataLoader,
-            ):
+            train_dataloader: DataLoader,
+            val_dataloader: DataLoader,
+    ):
         super().__init__()
         self.optimizer: torch.optim.Optimizer
 
         self.encoder_output_dim = encoder_output_dim
         self.num_classes = num_classes
         self.augmentations = mel_aug()
-        
+
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
         self.train_dataloader_iter = iter(self.train_dataloader)
@@ -302,7 +305,7 @@ class LinearEvaluationCallback(pl.Callback):
         y = y.to(device)
 
         return x, y
-    
+
     def on_train_batch_end(
             self,
             trainer: pl.Trainer,
@@ -311,7 +314,7 @@ class LinearEvaluationCallback(pl.Callback):
             batch: Sequence,
             batch_idx: int
     ):
-        
+
         try:
             batch = next(self.train_dataloader_iter)
         except StopIteration:
@@ -322,7 +325,7 @@ class LinearEvaluationCallback(pl.Callback):
 
         with torch.no_grad():
             features = pl_module.forward(x)
-        
+
         features = features.detach()
         preds = pl_module.linear_classifier(features)
         loss = F.cross_entropy(preds, y)
@@ -344,7 +347,7 @@ class LinearEvaluationCallback(pl.Callback):
             batch: Sequence,
             batch_idx: int
     ):
-        
+
         try:
             batch = next(self.val_dataloader_iter)
         except StopIteration:
@@ -357,13 +360,13 @@ class LinearEvaluationCallback(pl.Callback):
 
         with torch.no_grad():
             features = pl_module.forward(x)
-        
+
             features = features.detach()
             preds = pl_module.linear_classifier(features)
             loss = F.cross_entropy(preds, y)
 
         pl_module.train()
-        
+
         pred_labels = torch.argmax(preds, dim=1)
         acc = accuracy(pred_labels, y, task="multiclass", num_classes=10)
         pl_module.log("gtzan_val_acc", acc, on_step=False, on_epoch=True, sync_dist=True)
@@ -381,7 +384,7 @@ class LinearEvaluationCallback(pl.Callback):
 
 #         self.encoder_output_dim = encoder_output_dim
 #         self.num_classes = num_classes
-        
+
 #         self.train_dataloader = train_dataloader
 #         self.val_dataloader = val_dataloader
 
@@ -406,7 +409,7 @@ class LinearEvaluationCallback(pl.Callback):
 
 #                 with torch.no_grad():
 #                     features = pl_module.forward(x)
-                
+
 #                 features = features.detach()
 #                 preds = pl_module.linear_classifier(features)
 #                 loss = F.cross_entropy(preds, y)
@@ -416,7 +419,7 @@ class LinearEvaluationCallback(pl.Callback):
 #                 optimizer.zero_grad()
 
 #                 pred_labels = torch.argmax(preds, dim=1)
-#                 acc = accuracy(pred_labels, y, task="multiclass", num_classes=10)   
+#                 acc = accuracy(pred_labels, y, task="multiclass", num_classes=10)
 #                 train_accs.append(acc.item())
 
 #             avg_train_acc = np.mean(train_accs)
