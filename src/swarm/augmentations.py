@@ -126,13 +126,13 @@ class MixupBYOLA(nn.Module):
 
 def aug_pipeline(
     mixup_ratio: float = 0.4,
+    linear_fader_gain: float = 1.0,
     rrc_crop_scale_min: float = 1.0,
     rrc_crop_scale_max: float = 1.5,
     rrc_freq_scale_min: float = 0.6,
     rrc_freq_scale_max: float = 1.5,
     rrc_time_scale_min: float = 0.6,
     rrc_time_scale_max: float = 1.5,
-    linear_fader_gain: float = 1.0,
 ):
     return nn.Sequential(
         MixupBYOLA(ratio=mixup_ratio),
