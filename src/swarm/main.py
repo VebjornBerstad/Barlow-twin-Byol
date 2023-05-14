@@ -1,20 +1,18 @@
+import argparse
+from dataclasses import dataclass
+from pathlib import Path
+
 import torchvision.transforms as transforms
 from pytorch_lightning import Trainer
 from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
 
-from swarm.augmentations import RandomCropWidth
+from swarm.augmentations import RandomCropWidth, aug_pipeline
+from swarm.config import (parse_dvc_augmentation_config,
+                          parse_dvc_gtzan_config, parse_dvc_training_config)
 from swarm.dataset import AudioDataset, AudiosetDataset
-from swarm.models import ConvNet, LinearOnlineEvaluationCallback, BarlowTwins
-
-from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config
-from dataclasses import dataclass
-from swarm.config import parse_dvc_gtzan_config
-from swarm.augmentations import aug_pipeline
-
-from pathlib import Path
-import argparse
+from swarm.models import BarlowTwins, ConvNet, LinearOnlineEvaluationCallback
 
 
 @dataclass
