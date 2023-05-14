@@ -44,13 +44,14 @@ def main():
     ])
 
     audioset_dataset = AudiosetDataset(config.audio_dir, transform=transform)
-
     gtzan_train_dataset = AudioDataset(config.train_dir, transform=transform)
     gtzan_val_dataset = AudioDataset(config.val_dir, transform=transform)
 
+    audioset_dataset_len = len(audioset_dataset)
+
     # Split
-    valid_size = int(training_config.val_split * len(audioset_dataset))
-    train_size = len(audioset_dataset) - valid_size
+    valid_size = int(training_config.val_split * audioset_dataset_len)
+    train_size = audioset_dataset_len - valid_size
     audioset_train_dataset, audioset_val_dataset = random_split(audioset_dataset, [train_size, valid_size])
 
     batch_size = training_config.batch_size
@@ -68,7 +69,7 @@ def main():
         encoder=encoder,
         tau=0.99,
         encoder_out_dim=model_config.emb_dim_size,
-        num_training_samples=len(audioset_dataset),
+        num_training_samples=audioset_dataset_len,
         batch_size=batch_size
     )
 
