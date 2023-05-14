@@ -69,8 +69,6 @@ def main():
         encoder=encoder,
         tau=0.99,
         encoder_out_dim=model_config.emb_dim_size,
-        num_training_samples=audioset_dataset_len,
-        batch_size=batch_size
     )
 
     linear_evaluation = LinearOnlineEvaluationCallback(

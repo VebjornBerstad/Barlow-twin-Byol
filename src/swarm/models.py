@@ -1,5 +1,4 @@
 from copy import deepcopy
-from functools import partial
 from typing import Sequence, Union
 
 import pytorch_lightning as pl
@@ -10,17 +9,6 @@ from torch.utils.data import DataLoader
 from torchmetrics.functional import accuracy
 
 from swarm.augmentations import aug_pipeline, mel_aug
-
-
-def fn(warmup_steps, step):
-    if step < warmup_steps:
-        return float(step) / float(max(1, warmup_steps))
-    else:
-        return 1.0
-
-
-def linear_warmup_decay(warmup_steps):
-    return partial(fn, warmup_steps)
 
 
 class BarlowTwinsLoss(nn.Module):
@@ -197,11 +185,8 @@ class barlowBYOL(pl.LightningModule):
     def __init__(self,
                  encoder,
                  encoder_out_dim,
-                 num_training_samples,
-                 batch_size,
                  tau=0.99,
                  learning_rate=1e-4,
-                 warmup_epochs=10,
                  ):
 
         super().__init__()
@@ -209,9 +194,6 @@ class barlowBYOL(pl.LightningModule):
 
         self.tau = tau
         self.learning_rate = learning_rate
-        self.warmup_epochs = warmup_epochs
-
-        self.train_iters_per_epoch = num_training_samples // batch_size
 
         self.online = nn.Sequential(encoder, ProjectionHead(input_dim=encoder_out_dim))
         self.target = deepcopy(self.online)
@@ -255,19 +237,7 @@ class barlowBYOL(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.Adam(self.online.parameters(), lr=self.learning_rate)
-
-        warmup_steps = self.train_iters_per_epoch * self.warmup_epochs
-
-        scheduler = {
-            "scheduler": torch.optim.lr_scheduler.LambdaLR(
-                optimizer,
-                linear_warmup_decay(warmup_steps),
-            ),
-            "interval": "step",
-            "frequency": 1,
-        }
-
-        return [optimizer], [scheduler]
+        return optimizer
 
     def on_after_backward(self):
         for online_param, target_param in zip(self.online.parameters(), self.target.parameters()):
