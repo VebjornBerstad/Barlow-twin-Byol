@@ -90,7 +90,14 @@ def main():
         train_dataloader=gtzan_train_dataloader,
         val_dataloader=gtzan_val_dataloader
     )
-    checkpoint_callback = ModelCheckpoint(every_n_epochs=10, save_top_k=-1, save_last=True)
+    checkpoint_callback = ModelCheckpoint(
+        every_n_epochs=1,
+        save_top_k=5,
+        save_last=True,
+        monitor='val_loss',
+        mode='min',
+        filename='val_loss={val_loss:.5f}-epoch={epoch:03d}',
+    )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
     barlow_byol_trainer = Trainer(
