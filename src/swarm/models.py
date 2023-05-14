@@ -294,9 +294,11 @@ class LinearOnlineEvaluationCallback(pl.Callback):
         self.train_dataloader_iter = iter(self.train_dataloader)
         self.val_dataloader_iter = iter(self.val_dataloader)
 
+        self.linear_classifier: torch.nn.Linear
+
     def on_fit_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-        pl_module.linear_classifier = nn.Linear(self.encoder_output_dim, self.num_classes).to(pl_module.device)
-        self.optimizer = torch.optim.Adam(pl_module.linear_classifier.parameters(), lr=1e-4)
+        self.linear_classifier = nn.Linear(self.encoder_output_dim, self.num_classes).to(pl_module.device)
+        self.optimizer = torch.optim.Adam(self.linear_classifier.parameters(), lr=1e-4)
 
     def extract_batch(self, batch: Sequence, device: Union[str, torch.device]):
         x, y = batch
@@ -327,7 +329,7 @@ class LinearOnlineEvaluationCallback(pl.Callback):
             features = pl_module.forward(x)
 
         features = features.detach()
-        preds = pl_module.linear_classifier(features)
+        preds = self.linear_classifier(features)
         loss = F.cross_entropy(preds, y)
 
         loss.backward()
@@ -362,7 +364,7 @@ class LinearOnlineEvaluationCallback(pl.Callback):
             features = pl_module.forward(x)
 
             features = features.detach()
-            preds = pl_module.linear_classifier(features)
+            preds = self.linear_classifier(features)
             loss = F.cross_entropy(preds, y)
 
         pl_module.train()
