@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, random_split
 
 from swarm.augmentations import RandomCropWidth
 from swarm.dataset import AudioDataset, AudiosetDataset
-from swarm.models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
+from swarm.models import ConvNet, LinearOnlineEvaluationCallback, BarlowTwins
 
 from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config, parse_dvc_model_config
 from dataclasses import dataclass
@@ -64,10 +64,11 @@ def main():
     X_train_example, _ = next(iter(audioset_train_dataloader))
     X_train_example = X_train_example[:1]
 
-    encoder = ConvNet(in_channels=1, emb_dim_size=model_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
-    barlow_byol = barlowBYOL(
-        encoder=encoder,
-        tau=0.99,
+    encoder_online = ConvNet(in_channels=1, emb_dim_size=model_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+    encoder_target = ConvNet(in_channels=1, emb_dim_size=model_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+    barlow_byol = BarlowTwins(
+        encoder_online=encoder_online,
+        encoder_target=encoder_target,
         encoder_out_dim=model_config.emb_dim_size,
     )
 

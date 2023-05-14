@@ -1,4 +1,3 @@
-from copy import deepcopy
 from typing import Sequence, Union
 
 import pytorch_lightning as pl
@@ -181,22 +180,21 @@ class ProjectionHead(nn.Module):
         return concat
 
 
-class barlowBYOL(pl.LightningModule):
+class BarlowTwins(pl.LightningModule):
     def __init__(self,
-                 encoder,
+                 encoder_online: nn.Module,
+                 encoder_target: nn.Module,
                  encoder_out_dim,
-                 tau=0.99,
-                 learning_rate=1e-4,
+                 learning_rate=5e-5,
                  ):
 
         super().__init__()
         self.augment = aug_pipeline()
 
-        self.tau = tau
         self.learning_rate = learning_rate
 
-        self.online = nn.Sequential(encoder, ProjectionHead(input_dim=encoder_out_dim))
-        self.target = deepcopy(self.online)
+        self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim))
+        self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim))
 
         self.loss = BarlowTwinsLoss(batch_size=64)
 
@@ -211,12 +209,11 @@ class barlowBYOL(pl.LightningModule):
 
         with torch.no_grad():
             x1, x2 = self.augment(x), self.augment(x)
-            enc_target_y = self.target[0](x2)
-            target_y = self.target[1](enc_target_y)
 
-        enc_y = self.online[0](x1)
-        y = self.online[1](enc_y)
-        loss = self.loss(y, target_y)
+        y_online = self.online(x1)
+        y_target = self.target(x2)
+
+        loss = self.loss(y_online, y_target)
         self.log("train_loss", loss, on_step=True, on_epoch=False)
 
         return loss
@@ -228,20 +225,17 @@ class barlowBYOL(pl.LightningModule):
 
         with torch.no_grad():
             x1, x2 = self.augment(x), self.augment(x)
-            target_y = self.target(x2)
-            y = self.online(x1)
-            loss = self.loss(y, target_y)
+            y_online = self.online(x1)
+            y_target = self.target(x2)
+            loss = self.loss(y_online, y_target)
+
         self.log("val_loss", loss, on_step=False, on_epoch=True)
         self.online.train()
         self.target.train()
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.online.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
-
-    def on_after_backward(self):
-        for online_param, target_param in zip(self.online.parameters(), self.target.parameters()):
-            target_param.data.mul_(self.tau).add_(online_param.data, alpha=(1 - self.tau))
 
 
 class LinearOnlineEvaluationCallback(pl.Callback):
