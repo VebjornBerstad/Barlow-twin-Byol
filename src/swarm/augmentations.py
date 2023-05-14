@@ -124,7 +124,7 @@ class MixupBYOLA(nn.Module):
         return mixed.to(torch.float)
 
 
-def aug_pipeline(sample_rate=44100):
+def aug_pipeline():
     return nn.Sequential(
         MixupBYOLA(ratio=0.4),
         RandomResizeCrop(virtual_crop_scale=(1.0, 1.5), freq_scale=(0.6, 1.5), time_scale=(0.6, 1.5)),
@@ -133,7 +133,7 @@ def aug_pipeline(sample_rate=44100):
     )
 
 
-def mel_aug(sample_rate=44100):
+def mel_aug():
     return nn.Sequential(
         PostNormalize(),
     )
