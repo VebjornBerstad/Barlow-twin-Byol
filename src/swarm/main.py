@@ -40,8 +40,6 @@ def main():
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
     ])
 
-    batch_size = training_config.batch_size
-
     audioset_dataset = AudiosetDataset(config.audio_dir, transform=transform)
 
     gtzan_train_dataset = AudioDataset(config.train_dir, transform=transform)
@@ -52,6 +50,7 @@ def main():
     train_size = len(audioset_dataset) - valid_size
     audioset_train_dataset, audioset_val_dataset = random_split(audioset_dataset, [train_size, valid_size])
 
+    batch_size = training_config.batch_size
     audioset_train_dataloader = DataLoader(audioset_train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
     audioset_val_dataloader = DataLoader(audioset_val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=True)
 
@@ -61,18 +60,9 @@ def main():
     X_train_example, _ = next(iter(audioset_train_dataloader))
     X_train_example = X_train_example[:1]
 
-    # encoder = resnet18()
-    # encoder.conv1 = nn.Conv2d(1, 64, kernel_size=3, stride=1, padding=1, bias=False)
-    # encoder.maxpool = nn.MaxPool2d(kernel_size=1, stride=1)
-    # encoder.fc = nn.Identity()
-
     emb_dim_size = 4096
 
     encoder = ConvNet(in_channels=1, emb_dim_size=emb_dim_size, X_train_example=X_train_example, device='cuda')
-    # encoder = Autoencoder(emb_dim_size=emb_dim_size, X_train_example=X_train_example, device='cuda')
-
-    logger = TensorBoardLogger("logs", name="Barlow_BYOL")
-
     barlow_byol = barlowBYOL(encoder=encoder, tau=0.99, encoder_out_dim=emb_dim_size, num_training_samples=len(audioset_dataset), batch_size=batch_size)
 
     linear_evaluation = LinearOnlineEvaluationCallback(
@@ -81,7 +71,8 @@ def main():
         train_dataloader=gtzan_train_dataloader,
         val_dataloader=gtzan_val_dataloader
     )
-    checkpoint_callback = ModelCheckpoint(every_n_epochs=50, save_top_k=-1, save_last=True)
+    checkpoint_callback = ModelCheckpoint(every_n_epochs=10, save_top_k=-1, save_last=True)
+    logger = TensorBoardLogger("logs", name="Barlow_BYOL")
 
     barlow_byol_trainer = Trainer(
         devices=1,
