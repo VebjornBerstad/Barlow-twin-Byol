@@ -5,14 +5,12 @@ from torch.utils.data import Dataset
 
 
 class AudioDataset(Dataset):
-    def __init__(self, main_dir, target_sample_rate, unit_sec, transform=None):
+    def __init__(self, main_dir, transform=None):
         self.main_dir = main_dir
-        self.target_sample_rate = target_sample_rate
         self.transform = transform
         self.class_names = os.listdir(main_dir)
         self.file_list = []
         self.label_list = []
-        self.unit_length = int(unit_sec*target_sample_rate)
 
         for idx, class_name in enumerate(self.class_names):
             class_dir = os.path.join(main_dir, class_name)
@@ -36,11 +34,9 @@ class AudioDataset(Dataset):
 
 
 class AudiosetDataset(Dataset):
-    def __init__(self, data_root, target_sample_rate, unit_sec, transform=None):
+    def __init__(self, data_root, transform=None):
         self.data_root = data_root
-        self.target_sample_rate = target_sample_rate
         self.transform = transform
-        self.unit_length = int(unit_sec*target_sample_rate)
         self.file_list = [os.path.join(data_root, file) for file in os.listdir(data_root) if file.endswith('.pt')]
         self.label = 0
 

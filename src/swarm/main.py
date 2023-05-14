@@ -8,7 +8,7 @@ from swarm.augmentations import RandomCropWidth
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
 
-from swarm.config import parse_dvc_spectrogram_config, parse_dvc_training_config, parse_dvc_augmentation_config
+from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config
 from dataclasses import dataclass
 
 from pathlib import Path
@@ -33,21 +33,19 @@ def parse_args() -> Config:
 
 def main():
     config = parse_args()
-    spectrogram_config = parse_dvc_spectrogram_config()
     training_config = parse_dvc_training_config()
     augmentation_config = parse_dvc_augmentation_config()
 
-    sample_rate = spectrogram_config.target_sample_rate
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
     ])
 
     batch_size = training_config.batch_size
 
-    audioset_dataset = AudiosetDataset(config.audio_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
+    audioset_dataset = AudiosetDataset(config.audio_dir, transform=transform)
 
-    gtzan_train_dataset = AudioDataset(config.train_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
-    gtzan_val_dataset = AudioDataset(config.val_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
+    gtzan_train_dataset = AudioDataset(config.train_dir, transform=transform)
+    gtzan_val_dataset = AudioDataset(config.val_dir, transform=transform)
 
     # Split
     train_size = int(0.9 * len(audioset_dataset))
