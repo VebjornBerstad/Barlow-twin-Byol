@@ -9,8 +9,8 @@ import torch as T
 import torchaudio as TA
 from tqdm import tqdm
 
-from .preprocess_audio import (convert_waveform_to_lms, create_audio_segments,
-                               parse_dvc_spectrogram_config)
+from .config import parse_dvc_spectrogram_config
+from .preprocess_audio import convert_waveform_to_lms, create_audio_segments
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

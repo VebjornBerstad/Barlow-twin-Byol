@@ -1,14 +1,15 @@
 import argparse
 import logging
+import zipfile
 from dataclasses import dataclass
 from pathlib import Path
 
 import torch as T
 import torchaudio as TA
-import zipfile
 from tqdm import tqdm
 
-from .preprocess_audio import convert_waveform_to_lms, parse_dvc_spectrogram_config
+from .config import parse_dvc_spectrogram_config
+from .preprocess_audio import convert_waveform_to_lms
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -15,6 +15,7 @@ stages:
       - src/swarm/fetch_kaggle_dataset.py
       - src/swarm/preprocess_audio.py
       - src/swarm/preprocess_audioset.py
+      - src/swarm/config.py
     outs:
       - ./datasets/audioset_train_mel_split/
       - ./datasets/audioset_metadata/class_labels_indices.csv
@@ -37,6 +38,7 @@ stages:
       - src/swarm/fetch_kaggle_dataset.py
       - src/swarm/preprocess_audio.py
       - src/swarm/preprocess_gtzan.py
+      - src/swarm/config.py
     outs:
       - ./datasets/gtzan_train_mel_split/
       - ./datasets/gtzan_val_mel_split/
