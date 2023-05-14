@@ -26,6 +26,7 @@ def parse_dvc_spectrogram_config() -> SpectrogramConfig:
 @dataclass
 class TrainingConfig:
     batch_size: int
+    val_split: float
 
 
 def parse_dvc_training_config() -> TrainingConfig:
@@ -34,6 +35,7 @@ def parse_dvc_training_config() -> TrainingConfig:
 
     return TrainingConfig(
         batch_size=training_params['batch_size'],
+        val_split=training_params['val_split'],
     )
 
 

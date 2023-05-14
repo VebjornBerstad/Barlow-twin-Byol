@@ -48,8 +48,8 @@ def main():
     gtzan_val_dataset = AudioDataset(config.val_dir, transform=transform)
 
     # Split
-    train_size = int(0.9 * len(audioset_dataset))
-    valid_size = len(audioset_dataset) - train_size
+    valid_size = int(training_config.val_split * len(audioset_dataset))
+    train_size = len(audioset_dataset) - valid_size
     audioset_train_dataset, audioset_val_dataset = random_split(audioset_dataset, [train_size, valid_size])
 
     audioset_train_dataloader = DataLoader(audioset_train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)

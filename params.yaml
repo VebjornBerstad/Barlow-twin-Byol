@@ -13,6 +13,7 @@ datasets:
   
 training:
   batch_size: 512
+  val_split: 0.1
 
 augmentations:
   random_crop_width:
