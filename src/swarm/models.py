@@ -274,7 +274,7 @@ class barlowBYOL(pl.LightningModule):
             target_param.data.mul_(self.tau).add_(online_param.data, alpha=(1 - self.tau))
 
 
-class LinearEvaluationCallback(pl.Callback):
+class LinearOnlineEvaluationCallback(pl.Callback):
     def __init__(
             self,
             encoder_output_dim: int,

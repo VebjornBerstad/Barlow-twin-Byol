@@ -6,7 +6,7 @@ from torch.utils.data import DataLoader, random_split
 
 from .augmentations import RandomCropWidth
 from .dataset import AudioDataset, AudiosetDataset
-from .models import ConvNet, LinearEvaluationCallback, barlowBYOL
+from .models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
 
 
 def main():
@@ -55,7 +55,7 @@ def main():
 
     barlow_byol = barlowBYOL(encoder=encoder, tau=0.99, encoder_out_dim=emb_dim_size, num_training_samples=len(audioset_dataset), batch_size=batch_size)
 
-    linear_evaluation = LinearEvaluationCallback(
+    linear_evaluation = LinearOnlineEvaluationCallback(
         encoder_output_dim=emb_dim_size,
         num_classes=10,
         train_dataloader=gtzan_train_dataloader,
