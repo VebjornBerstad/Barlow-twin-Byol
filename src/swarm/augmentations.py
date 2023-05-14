@@ -23,7 +23,7 @@ class RandomCropWidth(nn.Module):
 
 
 class PostNormalize(nn.Module):
-    def __init__(self, eps=1e-5):
+    def __init__(self, eps=1e-8):
         super(PostNormalize, self).__init__()
         self.eps = eps
 
@@ -124,11 +124,26 @@ class MixupBYOLA(nn.Module):
         return mixed.to(torch.float)
 
 
-def aug_pipeline():
+def aug_pipeline(
+    mixup_ratio: float = 0.4,
+    rrc_crop_scale_min: float = 1.0,
+    rrc_crop_scale_max: float = 1.5,
+    rrc_freq_scale_min: float = 0.6,
+    rrc_freq_scale_max: float = 1.5,
+    rrc_time_scale_min: float = 0.6,
+    rrc_time_scale_max: float = 1.5,
+    linear_fader_gain: float = 1.0,
+):
     return nn.Sequential(
-        MixupBYOLA(ratio=0.4),
-        RandomResizeCrop(virtual_crop_scale=(1.0, 1.5), freq_scale=(0.6, 1.5), time_scale=(0.6, 1.5)),
-        RandomLinearFader(),
+        MixupBYOLA(ratio=mixup_ratio),
+        RandomResizeCrop(
+            virtual_crop_scale=(rrc_crop_scale_min, rrc_crop_scale_max),
+            freq_scale=(rrc_freq_scale_min, rrc_freq_scale_max),
+            time_scale=(rrc_time_scale_min, rrc_time_scale_max),
+        ),
+        RandomLinearFader(
+            gain=linear_fader_gain,
+        ),
         PostNormalize(),
     )
 
