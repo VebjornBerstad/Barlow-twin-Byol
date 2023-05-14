@@ -11,6 +11,7 @@ from swarm.models import ConvNet, LinearOnlineEvaluationCallback, BarlowTwins
 from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config
 from dataclasses import dataclass
 from swarm.config import parse_dvc_gtzan_config
+from swarm.augmentations import aug_pipeline
 
 from pathlib import Path
 import argparse
@@ -63,6 +64,17 @@ def main():
     X_train_example, _ = next(iter(audioset_train_dataloader))
     X_train_example = X_train_example[:1]
 
+    augmentations = aug_pipeline(
+        mixup_ratio=augmentation_config.mixup_ratio,
+        linear_fader_gain=augmentation_config.linear_fader_gain,
+        rrc_crop_scale_min=augmentation_config.rrc_crop_scale_min,
+        rrc_crop_scale_max=augmentation_config.rrc_crop_scale_max,
+        rrc_freq_scale_min=augmentation_config.rrc_freq_scale_min,
+        rrc_freq_scale_max=augmentation_config.rrc_freq_scale_max,
+        rrc_time_scale_min=augmentation_config.rrc_time_scale_min,
+        rrc_time_scale_max=augmentation_config.rrc_time_scale_max,
+    )
+
     encoder_online = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     encoder_target = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     barlow_byol = BarlowTwins(
@@ -71,6 +83,7 @@ def main():
         encoder_out_dim=training_config.emb_dim_size,
         learning_rate=training_config.lr,
         xcorr_lambda=training_config.xcorr_lambda,
+        augmentations=augmentations
     )
 
     linear_evaluation = LinearOnlineEvaluationCallback(

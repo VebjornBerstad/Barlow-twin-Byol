@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchmetrics.functional import accuracy
 
-from swarm.augmentations import aug_pipeline, mel_aug
+from swarm.augmentations import mel_aug
 
 
 class BarlowTwinsLoss(nn.Module):
@@ -184,11 +184,12 @@ class BarlowTwins(pl.LightningModule):
                  encoder_target: nn.Module,
                  encoder_out_dim: int,
                  learning_rate: float,
-                 xcorr_lambda: float
+                 xcorr_lambda: float,
+                 augmentations: nn.Module
                  ):
 
         super().__init__()
-        self.augment = aug_pipeline()
+        self.augment = augmentations
 
         self.learning_rate = learning_rate
 

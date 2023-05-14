@@ -48,6 +48,14 @@ def parse_dvc_training_config() -> TrainingConfig:
 @dataclass
 class AugmentationConfig:
     rcw_target_frames: int
+    mixup_ratio: float
+    linear_fader_gain: float
+    rrc_crop_scale_min: float
+    rrc_crop_scale_max: float
+    rrc_freq_scale_min: float
+    rrc_freq_scale_max: float
+    rrc_time_scale_min: float
+    rrc_time_scale_max: float
 
 
 def parse_dvc_augmentation_config() -> AugmentationConfig:
@@ -55,9 +63,20 @@ def parse_dvc_augmentation_config() -> AugmentationConfig:
     augmentation_params = params['augmentations']
 
     rcw = augmentation_params['random_crop_width']
+    mixup = augmentation_params['mixup']
+    linear_fader = augmentation_params['linear_fader']
+    rrc = augmentation_params['random_resize_crop']
 
     return AugmentationConfig(
         rcw_target_frames=rcw['target_frames'],
+        mixup_ratio=mixup['ratio'],
+        linear_fader_gain=linear_fader['gain'],
+        rrc_crop_scale_min=rrc['crop_scale']["min"],
+        rrc_crop_scale_max=rrc['crop_scale']["max"],
+        rrc_freq_scale_min=rrc['freq_scale']["min"],
+        rrc_freq_scale_max=rrc['freq_scale']["max"],
+        rrc_time_scale_min=rrc['time_scale']["min"],
+        rrc_time_scale_max=rrc['time_scale']["max"],
     )
 
 

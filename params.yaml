@@ -22,3 +22,17 @@ training:
 augmentations:
   random_crop_width:
     target_frames: 96
+  mixup:
+    ratio: 0.4
+  linear_fader:
+    gain: 1.0
+  random_resize_crop:
+    crop_scale:
+      min: 1.0
+      max: 1.5
+    freq_scale:
+      min: 0.6
+      max: 1.5
+    time_scale:
+      min: 0.6
+      max: 1.5
