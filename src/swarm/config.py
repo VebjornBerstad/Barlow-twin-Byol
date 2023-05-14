@@ -27,6 +27,9 @@ def parse_dvc_spectrogram_config() -> SpectrogramConfig:
 class TrainingConfig:
     batch_size: int
     val_split: float
+    lr: float
+    xcorr_lambda: float
+    emb_dim_size: int
 
 
 def parse_dvc_training_config() -> TrainingConfig:
@@ -36,6 +39,9 @@ def parse_dvc_training_config() -> TrainingConfig:
     return TrainingConfig(
         batch_size=training_params['batch_size'],
         val_split=training_params['val_split'],
+        lr=training_params['lr'],
+        xcorr_lambda=training_params['xcorr_lambda'],
+        emb_dim_size=training_params['emb_dim_size'],
     )
 
 
@@ -52,20 +58,6 @@ def parse_dvc_augmentation_config() -> AugmentationConfig:
 
     return AugmentationConfig(
         rcw_target_frames=rcw['target_frames'],
-    )
-
-
-@dataclass
-class ModelConfig:
-    emb_dim_size: int
-
-
-def parse_dvc_model_config() -> ModelConfig:
-    params = dvc_api.params_show()
-    model_params = params['model']
-
-    return ModelConfig(
-        emb_dim_size=model_params['emb_dim_size'],
     )
 
 

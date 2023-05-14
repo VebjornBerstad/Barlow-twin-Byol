@@ -8,7 +8,7 @@ from swarm.augmentations import RandomCropWidth
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import ConvNet, LinearOnlineEvaluationCallback, BarlowTwins
 
-from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config, parse_dvc_model_config
+from swarm.config import parse_dvc_training_config, parse_dvc_augmentation_config
 from dataclasses import dataclass
 from swarm.config import parse_dvc_gtzan_config
 
@@ -36,7 +36,6 @@ def main():
     config = parse_args()
     training_config = parse_dvc_training_config()
     augmentation_config = parse_dvc_augmentation_config()
-    model_config = parse_dvc_model_config()
     gtzan_config = parse_dvc_gtzan_config()
 
     transform = transforms.Compose([
@@ -64,16 +63,18 @@ def main():
     X_train_example, _ = next(iter(audioset_train_dataloader))
     X_train_example = X_train_example[:1]
 
-    encoder_online = ConvNet(in_channels=1, emb_dim_size=model_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
-    encoder_target = ConvNet(in_channels=1, emb_dim_size=model_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+    encoder_online = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+    encoder_target = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     barlow_byol = BarlowTwins(
         encoder_online=encoder_online,
         encoder_target=encoder_target,
-        encoder_out_dim=model_config.emb_dim_size,
+        encoder_out_dim=training_config.emb_dim_size,
+        learning_rate=training_config.lr,
+        xcorr_lambda=training_config.xcorr_lambda,
     )
 
     linear_evaluation = LinearOnlineEvaluationCallback(
-        encoder_output_dim=model_config.emb_dim_size,
+        encoder_output_dim=training_config.emb_dim_size,
         num_classes=gtzan_config.num_classes,
         train_dataloader=gtzan_train_dataloader,
         val_dataloader=gtzan_val_dataloader

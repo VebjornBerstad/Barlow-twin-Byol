@@ -11,12 +11,10 @@ from swarm.augmentations import aug_pipeline, mel_aug
 
 
 class BarlowTwinsLoss(nn.Module):
-    def __init__(self, batch_size, lambda_coeff=5e-3, z_dim=128):
+    def __init__(self, lambda_=5e-3):
         super().__init__()
 
-        self.z_dim = z_dim
-        self.batch_size = batch_size
-        self.lambda_coeff = lambda_coeff
+        self.lambda_ = lambda_
 
     def off_diagonal_ele(self, x):
         n, m = x.shape
@@ -35,7 +33,7 @@ class BarlowTwinsLoss(nn.Module):
         on_diag = torch.diagonal(cross_corr).add_(-1).pow_(2).sum()
         off_diag = self.off_diagonal_ele(cross_corr).pow_(2).sum()
 
-        return on_diag + self.lambda_coeff * off_diag
+        return on_diag + self.lambda_ * off_diag
 
 
 class ResidualBlock(nn.Module):
@@ -184,8 +182,9 @@ class BarlowTwins(pl.LightningModule):
     def __init__(self,
                  encoder_online: nn.Module,
                  encoder_target: nn.Module,
-                 encoder_out_dim,
-                 learning_rate=5e-5,
+                 encoder_out_dim: int,
+                 learning_rate: float,
+                 xcorr_lambda: float
                  ):
 
         super().__init__()
@@ -196,7 +195,7 @@ class BarlowTwins(pl.LightningModule):
         self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim))
         self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim))
 
-        self.loss = BarlowTwinsLoss(batch_size=64)
+        self.loss = BarlowTwinsLoss(lambda_=xcorr_lambda)
 
     def forward(self, x):
         return self.online[0](x)
