@@ -50,6 +50,9 @@
             "module": "swarm.main",
             "justMyCode": true,
             "args": [
+                "--train_dir", "datasets/gtzan_train_mel_split",
+                "--val_dir", "datasets/gtzan_val_mel_split",
+                "--audio_dir", "datasets/audioset_train_mel_split",
             ]
         },
     ]

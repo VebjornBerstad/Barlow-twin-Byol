@@ -8,24 +8,46 @@ from swarm.augmentations import RandomCropWidth
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
 
+from swarm.config import parse_dvc_spectrogram_config, parse_dvc_training_config, parse_dvc_augmentation_config
+from dataclasses import dataclass
+
+from pathlib import Path
+import argparse
+
+
+@dataclass
+class Config:
+    train_dir: Path
+    val_dir: Path
+    audio_dir: Path
+
+
+def parse_args() -> Config:
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--train_dir', type=Path, help="The input directory containing the GTZAN dataset WAV files.")
+    parser.add_argument('--val_dir', type=Path, help='The output directory to save the training dataset.')
+    parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.')
+    args = parser.parse_args()
+    return Config(**vars(args))
+
 
 def main():
+    config = parse_args()
+    spectrogram_config = parse_dvc_spectrogram_config()
+    training_config = parse_dvc_training_config()
+    augmentation_config = parse_dvc_augmentation_config()
 
-    sample_rate = 16000
+    sample_rate = spectrogram_config.target_sample_rate
     transform = transforms.Compose([
-        RandomCropWidth(target_frames=96),  # 96
+        RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
     ])
 
-    train_dir = './datasets/gtzan_train_mel_split'
-    val_dir = './datasets/gtzan_val_mel_split'
-    audio_dir = './datasets/audioset_train_mel_split'
+    batch_size = training_config.batch_size
 
-    batch_size = 512
+    audioset_dataset = AudiosetDataset(config.audio_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
 
-    audioset_dataset = AudiosetDataset(audio_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
-
-    gtzan_train_dataset = AudioDataset(train_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
-    gtzan_val_dataset = AudioDataset(val_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
+    gtzan_train_dataset = AudioDataset(config.train_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
+    gtzan_val_dataset = AudioDataset(config.val_dir, target_sample_rate=sample_rate, unit_sec=1, transform=transform)
 
     # Split
     train_size = int(0.9 * len(audioset_dataset))
