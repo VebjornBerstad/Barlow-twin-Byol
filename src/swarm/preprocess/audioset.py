@@ -9,7 +9,7 @@ import torchaudio as TA
 from tqdm import tqdm
 
 from swarm.config import parse_dvc_spectrogram_config
-from .tools import convert_waveform_to_lms
+from swarm.preprocess.tools import convert_waveform_to_lms
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

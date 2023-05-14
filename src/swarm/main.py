@@ -4,9 +4,9 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
 
-from .augmentations import RandomCropWidth
-from .dataset import AudioDataset, AudiosetDataset
-from .models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
+from swarm.augmentations import RandomCropWidth
+from swarm.dataset import AudioDataset, AudiosetDataset
+from swarm.models import ConvNet, LinearOnlineEvaluationCallback, barlowBYOL
 
 
 def main():

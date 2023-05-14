@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchmetrics.functional import accuracy
 
-from .augmentations import aug_pipeline, mel_aug
+from swarm.augmentations import aug_pipeline, mel_aug
 
 
 def fn(warmup_steps, step):
