@@ -4,7 +4,6 @@ from pathlib import Path
 
 import torchvision.transforms as transforms
 from pytorch_lightning import Trainer
-from pytorch_lightning.callbacks import ModelCheckpoint
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
 
@@ -91,21 +90,13 @@ def main():
         train_dataloader=gtzan_train_dataloader,
         val_dataloader=gtzan_val_dataloader
     )
-    checkpoint_callback = ModelCheckpoint(
-        every_n_epochs=1,
-        save_top_k=5,
-        save_last=True,
-        monitor='val_loss',
-        mode='min',
-        filename='val_loss={val_loss:.5f}-epoch={epoch:03d}',
-    )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
     barlow_byol_trainer = Trainer(
         devices=1,
         accelerator='gpu',
         max_epochs=500,
-        callbacks=[linear_evaluation, checkpoint_callback],
+        callbacks=[linear_evaluation],
         logger=logger,
     )
     barlow_byol_trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
