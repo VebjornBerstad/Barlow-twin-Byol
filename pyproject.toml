@@ -15,6 +15,7 @@ dependencies = [
     "librosa",
     "lightning",
     "optuna",
+    "optuna-dashboard",
     "numpy",
     "pydub",
     "tensorboard",
