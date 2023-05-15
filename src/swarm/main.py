@@ -18,7 +18,7 @@ from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_augmentation_config,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
 from swarm.dataset import AudioDataset, AudiosetDataset
-from swarm.models import BarlowTwins, ConvNet
+from swarm.models import BarlowTwins, Encoder
 from swarm.utils import linear_evaluation_multiclass
 
 
@@ -114,8 +114,8 @@ def train_barlow_twins(
 
     pre_aug_normalize = augmentations[0]
 
-    encoder_online = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
-    encoder_target = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+    encoder_online = Encoder(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+    encoder_target = Encoder(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     barlow_byol = BarlowTwins(
         encoder_online=encoder_online,
         encoder_target=encoder_target,
