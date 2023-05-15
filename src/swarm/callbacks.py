@@ -1,3 +1,4 @@
+from copy import deepcopy
 from typing import Sequence, Union
 
 import numpy as np
@@ -138,6 +139,9 @@ class EarlyStoppingFromSlopeCallback(pl.Callback):
             raise ValueError("direction must be either 'minimize' or 'maximize'")
         self.direction = direction
 
+        self.best_module: pl.LightningModule | None = None
+        self.best_metric_value: float | None = None
+
     def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         # Get the metric value
         if self.metric_name in trainer.callback_metrics:
@@ -145,6 +149,19 @@ class EarlyStoppingFromSlopeCallback(pl.Callback):
             if m is None or T.isnan(m).any():
                 trainer.should_stop = True
             else:
+                if self.best_metric_value is None:
+                    self.best_metric_value = m.item()
+                    self.best_module = deepcopy(pl_module)
+                else:
+                    if self.direction == self.DIRECTION_MAXIMIZE:
+                        if m > self.best_metric_value:
+                            self.best_metric_value = m.item()
+                            self.best_module = deepcopy(pl_module)
+                    else:
+                        if m < self.best_metric_value:
+                            self.best_metric_value = m.item()
+                            self.best_module = deepcopy(pl_module)
+
                 self.metric_history.append(trainer.callback_metrics[self.metric_name].item())
                 if len(self.metric_history) >= self.patience:
                     lr = LinearRegression()

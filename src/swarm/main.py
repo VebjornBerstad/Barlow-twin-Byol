@@ -20,6 +20,7 @@ from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
 from swarm.dataset import AudiosetDataset, GtzanDataset
 from swarm.models import BarlowTwins, Encoder
 from swarm.utils import linear_evaluation_multiclass
+from copy import deepcopy
 
 
 @dataclass
@@ -160,10 +161,10 @@ def train_barlow_twins(
     )
     trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
 
-    encoder = T.nn.Sequential(
-        pre_aug_normalize,
-        encoder_online,
-    ).cuda()
+    best_model: BarlowTwins = early_stopping.best_module  # type: ignore
+    best_encoder = deepcopy(best_model.target[0])
+
+    encoder = T.nn.Sequential(pre_aug_normalize, best_encoder).cuda()
     loss_result = linear_evaluation_multiclass(
         encoder=encoder,
         encoder_dims=training_config.emb_dim_size,
