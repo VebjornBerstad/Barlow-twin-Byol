@@ -7,18 +7,19 @@ import torch as T
 import torchvision.transforms as transforms
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
+from torch.cuda import OutOfMemoryError
 from torch.utils.data import DataLoader, random_split
 
 import optuna
 from swarm.augmentations import RandomCropWidth, aug_pipeline
+from swarm.callbacks import (EarlyStoppingFromSlopeCallback,
+                             LinearOnlineEvaluationCallback)
 from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_augmentation_config,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import BarlowTwins, ConvNet
-from swarm.callbacks import LinearOnlineEvaluationCallback, EarlyStoppingFromSlopeCallback
 from swarm.utils import linear_evaluation_multiclass
-from torch.cuda import OutOfMemoryError
 
 
 @dataclass

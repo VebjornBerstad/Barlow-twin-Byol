@@ -1,11 +1,11 @@
 import os
+from pathlib import Path
 
+import numpy as np
+import pandas as pd
 import torch
 from torch.utils.data import Dataset
-from pathlib import Path
-import pandas as pd
 from torchvision.transforms import Compose
-import numpy as np
 
 
 class AudioDataset(Dataset):

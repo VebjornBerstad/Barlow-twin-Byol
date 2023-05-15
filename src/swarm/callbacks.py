@@ -1,14 +1,16 @@
 from typing import Sequence, Union
 
+import numpy as np
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from sklearn.linear_model import LinearRegression
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional import accuracy
-import numpy as np
-from sklearn.linear_model import LinearRegression
-from swarm.utils import linear_evaluation_binary_class, linear_evaluation_multiclass
+
+from swarm.utils import (linear_evaluation_binary_class,
+                         linear_evaluation_multiclass)
 
 
 class LinearOnlineEvaluationCallback(pl.Callback):
