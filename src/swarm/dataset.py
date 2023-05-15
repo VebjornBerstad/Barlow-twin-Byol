@@ -19,8 +19,8 @@ class GtzanDataset(Dataset):
 
     def __init__(
         self,
-        main_dir: str,
-        transforms: T.nn.Module | None = None
+        main_dir: Path,
+        transforms: T.nn.Module | Compose | None = None
     ):
         """Data should be stored in a directory with the following structure:
             ./<dataset dir>/<class name>/<file>.pt
