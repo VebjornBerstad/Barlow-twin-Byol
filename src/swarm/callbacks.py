@@ -2,8 +2,7 @@ from typing import Sequence, Union
 
 import numpy as np
 import pytorch_lightning as pl
-import torch
-import torch.nn as nn
+import torch as T
 import torch.nn.functional as F
 from sklearn.linear_model import LinearRegression
 from torch.utils.data import DataLoader, Dataset
@@ -20,10 +19,10 @@ class LinearOnlineEvaluationCallback(pl.Callback):
             num_classes: int,
             train_dataloader: DataLoader,
             val_dataloader: DataLoader,
-            augmentations: nn.Module,  # Pre-normalize from aug_pipeline
+            augmentations: T.nn.Module,  # Pre-normalize from aug_pipeline
     ):
         super().__init__()
-        self.optimizer: torch.optim.Optimizer
+        self.optimizer: T.optim.Optimizer
 
         self.encoder_output_dim = encoder_output_dim
         self.num_classes = num_classes
@@ -34,13 +33,13 @@ class LinearOnlineEvaluationCallback(pl.Callback):
         self.train_dataloader_iter = iter(self.train_dataloader)
         self.val_dataloader_iter = iter(self.val_dataloader)
 
-        self.linear_classifier: torch.nn.Linear
+        self.linear_classifier: T.nn.Linear
 
     def on_fit_start(self, trainer: pl.Trainer, pl_module: pl.LightningModule):
-        self.linear_classifier = nn.Linear(self.encoder_output_dim, self.num_classes).to(pl_module.device)
-        self.optimizer = torch.optim.Adam(self.linear_classifier.parameters(), lr=1e-4)
+        self.linear_classifier = T.nn.Linear(self.encoder_output_dim, self.num_classes).to(pl_module.device)
+        self.optimizer = T.optim.Adam(self.linear_classifier.parameters(), lr=1e-4)
 
-    def extract_batch(self, batch: Sequence, device: Union[str, torch.device]):
+    def extract_batch(self, batch: Sequence, device: Union[str, T.device]):
         x, y = batch
         x = self.augmentations(x)
         x = x.to(device)
@@ -65,7 +64,7 @@ class LinearOnlineEvaluationCallback(pl.Callback):
 
         x, y = self.extract_batch(batch, pl_module.device)
 
-        with torch.no_grad():
+        with T.no_grad():
             features = pl_module.forward(x)
 
         features = features.detach()
@@ -76,7 +75,7 @@ class LinearOnlineEvaluationCallback(pl.Callback):
         self.optimizer.step()
         self.optimizer.zero_grad()
 
-        pred_labels = torch.argmax(preds, dim=1)
+        pred_labels = T.argmax(preds, dim=1)
         acc = accuracy(pred_labels, y, task="multiclass", num_classes=10)
         pl_module.log("gtzan_train_acc", acc, on_step=False, on_epoch=True)
         pl_module.log("gtzan_train_loss", loss, on_step=True, on_epoch=False)
@@ -100,7 +99,7 @@ class LinearOnlineEvaluationCallback(pl.Callback):
 
         pl_module.eval()
 
-        with torch.no_grad():
+        with T.no_grad():
             features = pl_module.forward(x)
 
             features = features.detach()
@@ -109,7 +108,7 @@ class LinearOnlineEvaluationCallback(pl.Callback):
 
         pl_module.train()
 
-        pred_labels = torch.argmax(preds, dim=1)
+        pred_labels = T.argmax(preds, dim=1)
         acc = accuracy(pred_labels, y, task="multiclass", num_classes=10)
         pl_module.log("gtzan_val_acc", acc, on_step=False, on_epoch=True, sync_dist=True)
         pl_module.log("gtzan_val_loss", loss, on_step=False, on_epoch=True, sync_dist=True)
@@ -143,7 +142,7 @@ class EarlyStoppingFromSlopeCallback(pl.Callback):
         # Get the metric value
         if self.metric_name in trainer.callback_metrics:
             m = trainer.callback_metrics[self.metric_name]
-            if m is None or torch.isnan(m).any():
+            if m is None or T.isnan(m).any():
                 trainer.should_stop = True
             else:
                 self.metric_history.append(trainer.callback_metrics[self.metric_name].item())
@@ -168,7 +167,7 @@ class LinearBinaryEvaluationCallback(pl.Callback):
         dataset_name: str,
         train_dataset: Dataset,
         val_dataset: Dataset,
-        augmentations: nn.Module,
+        augmentations: T.nn.Module,
         encoder_dims: int,
     ):
         super().__init__()
@@ -180,7 +179,7 @@ class LinearBinaryEvaluationCallback(pl.Callback):
 
     def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         res = linear_evaluation_binary_class(
-            encoder=torch.nn.Sequential(self.augmentations, pl_module),
+            encoder=T.nn.Sequential(self.augmentations, pl_module),
             encoder_dims=self.encoder_dims,
             device=pl_module.device,
             train_dataset=self.train_dataset,
@@ -198,7 +197,7 @@ class LinearMulticlassEvaluationCallback(pl.Callback):
         num_classes: int,
         train_dataset: Dataset,
         val_dataset: Dataset,
-        augmentations: nn.Module,
+        augmentations: T.nn.Module,
         encoder_dims: int,
     ):
         super().__init__()
@@ -211,7 +210,7 @@ class LinearMulticlassEvaluationCallback(pl.Callback):
 
     def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         res = linear_evaluation_multiclass(
-            encoder=torch.nn.Sequential(self.augmentations, pl_module),
+            encoder=T.nn.Sequential(self.augmentations, pl_module),
             num_classes=self.num_classes,
             encoder_dims=self.encoder_dims,
             device=pl_module.device,
