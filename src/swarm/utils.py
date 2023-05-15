@@ -16,11 +16,11 @@ class EvaluationResult:
     loss: float
 
 
-class LinearModel(T.nn.Module):
+class LinearModelMulticlass(T.nn.Module):
     def __init__(self, in_features: int, out_features: int):
         super().__init__()
         self.linear = T.nn.Linear(in_features, out_features)
-        # self.softmax = T.nn.Softmax(dim=1)
+        self.softmax = T.nn.Softmax(dim=1)
 
     def forward(self, x: T.Tensor) -> T.Tensor:
         return self.linear(x)
@@ -39,7 +39,7 @@ def linear_evaluation_multiclass(
 ) -> EvaluationResult:
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
-    linear_model = LinearModel(encoder_dims, num_classes)
+    linear_model = LinearModelMulticlass(encoder_dims, num_classes)
     linear_model.to(device)
 
     optimizer = T.optim.Adam(linear_model.parameters(), lr=1e-3)
@@ -117,3 +117,5 @@ def linear_evaluation_multiclass(
         f1 = f1_score(y_hat, y, task="multiclass", num_classes=num_classes)
 
         return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss)
+
+

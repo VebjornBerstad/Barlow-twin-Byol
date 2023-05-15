@@ -24,6 +24,8 @@ class Config:
     train_dir: Path
     val_dir: Path
     audio_dir: Path
+    audioset_train_csv_path: Path
+    audioset_class_labels_indices_csv_path: Path
 
 
 def parse_args() -> Config:
@@ -31,6 +33,8 @@ def parse_args() -> Config:
     parser.add_argument('--train_dir', type=Path, help="The input directory containing the GTZAN dataset WAV files.")
     parser.add_argument('--val_dir', type=Path, help='The output directory to save the training dataset.')
     parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.')
+    parser.add_argument('--audioset_train_csv_path', type=Path, help='The output directory to save the validation dataset.')
+    parser.add_argument('--audioset_class_labels_indices_csv_path', type=Path, help='The output directory to save the validation dataset.')
     args = parser.parse_args()
     return Config(**vars(args))
 
@@ -68,7 +72,12 @@ def train_barlow_twins(
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
     ])
 
-    audioset_dataset = AudiosetDataset(config.audio_dir, transform=transform)
+    audioset_dataset = AudiosetDataset(
+        audio_path=config.audio_dir,
+        labels_desc_csv=config.audioset_class_labels_indices_csv_path,
+        labels_csv=config.audioset_train_csv_path,
+        transform=transform,
+    )
     gtzan_train_dataset = AudioDataset(config.train_dir, transform=transform)
     gtzan_val_dataset = AudioDataset(config.val_dir, transform=transform)
 

@@ -53,7 +53,19 @@
                 "--train_dir", "datasets/gtzan_train_mel_split",
                 "--val_dir", "datasets/gtzan_val_mel_split",
                 "--audio_dir", "datasets/audioset_train_mel_split",
+                "--audioset_train_csv_path", "datasets/audioset_metadata/train.csv",
+                "--audioset_class_labels_indices_csv_path", "datasets/audioset_metadata/class_labels_indices.csv",
             ]
         },
+        {
+            // Run Python file.
+            "name": "Run file",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+        },
+
     ]
 }
