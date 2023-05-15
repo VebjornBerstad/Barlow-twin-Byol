@@ -1,3 +1,7 @@
+"""Various utilities for the swarm package, including linear evaluation models 
+and training functions.
+"""
+
 from copy import deepcopy
 from dataclasses import dataclass
 
@@ -11,18 +15,32 @@ from tqdm import trange
 
 @dataclass
 class EvaluationResult:
+    """A set of standard evaluation matrics."""
     acc: float
     f1: float
     loss: float
 
 
 class LinearModelMulticlass(T.nn.Module):
+    """A linear model for multiclass classification."""
+
     def __init__(self, in_features: int, out_features: int):
+        """
+        Args:
+            in_features: The number of input features.
+            out_features: The number of output features.
+        """
         super().__init__()
         self.linear = T.nn.Linear(in_features, out_features)
         self.softmax = T.nn.Softmax(dim=1)
 
     def forward(self, x: T.Tensor) -> T.Tensor:
+        """
+        Args:
+            x: The input tensor.
+        Returns:
+            The output tensor.
+        """
         return self.softmax(self.linear(x))
 
 
@@ -33,22 +51,46 @@ def linear_evaluation_multiclass(
     num_classes: int,
     train_dataset: Dataset,
     test_dataset: Dataset,
-    max_iter: int = 100,
+    max_epochs: int = 100,
     slope_window: int = 5,
     batch_size: int = 512,
+    lr: float = 1e-3,
 ) -> EvaluationResult:
+    """Trains a linear evaluation model on top of the encoder.
+
+    Model selection is performed by looking at the loss of the testing set and selcting the
+    model with the lowest loss. Additionally, this is done in tandem with a slope-based method
+    for estimating when the model has started to overfit on the training data. The test dataset
+    is used for model selection and final evaluation.
+
+    Args:
+        encoder: The encoder model. It should encode the data from the training sets into
+            a representation vector of size `encoder_dims`.
+        encoder_dims: The size of the representation vector.
+        device: The device used during training.
+        num_classes: The number of classes in the dataset.
+        train_dataset: The training dataset.
+        test_dataset: The test dataset.
+        max_epochs: The maximum number of epochs to run for.
+        slope_window: The number of epochs/loss values to use for slope calculation.
+        batch_size: The batch size to use during training.
+        lr: The learning rate to use for the optimizer during training.
+    Returns:
+        The evaluation result.
+    """
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     linear_model = LinearModelMulticlass(encoder_dims, num_classes)
     linear_model.to(device)
 
-    optimizer = T.optim.Adam(linear_model.parameters(), lr=1e-3)
+    optimizer = T.optim.Adam(linear_model.parameters(), lr=lr)
     loss_fn = T.nn.functional.cross_entropy
 
     best_model = deepcopy(linear_model)
     best_val_loss = float('inf')
     val_loss_history = []
-    for _ in trange(max_iter, desc="Linear evaluation"):
+    for _ in trange(max_epochs, desc="Linear evaluation"):
+        # Model training
         linear_model.train()
         for X, y in train_loader:
             X = X.to(device)
@@ -64,6 +106,7 @@ def linear_evaluation_multiclass(
             val_loss.backward()
             optimizer.step()
 
+        # Select the best model and to stop training early.
         with T.no_grad():
             linear_model.eval()
             val_losses = []
@@ -83,15 +126,16 @@ def linear_evaluation_multiclass(
                 best_model = deepcopy(linear_model)
 
             if len(val_loss_history) > slope_window:
-                lr = LinearRegression()
+                lingreg = LinearRegression()
                 loss_last = val_loss_history[-slope_window:]
                 x = np.arange(len(loss_last)).reshape(-1, 1)
                 y = np.array(loss_last).reshape(-1, 1)
-                lr.fit(x, y)
+                lingreg.fit(x, y)
 
-                if lr.coef_[0][0] > 0:
+                if lingreg.coef_[0][0] > 0:
                     break
 
+    # Evaluation metrics are calculated.
     with T.no_grad():
         best_model.eval()
 
@@ -119,12 +163,24 @@ def linear_evaluation_multiclass(
 
 
 class LinearModelBinaryClass(T.nn.Module):
+    """A linear model for binary classification."""
+
     def __init__(self, in_features: int):
+        """
+        Args:
+            in_features: The number of input features.
+        """
         super().__init__()
         self.linear = T.nn.Linear(in_features, 1)
         self.sigmoid = T.nn.Sigmoid()
 
     def forward(self, x: T.Tensor) -> T.Tensor:
+        """
+        Args:
+            x: The input tensor.
+        Returns:
+            The output tensor.
+        """
         return self.sigmoid(self.linear(x))
 
 
@@ -137,19 +193,42 @@ def linear_evaluation_binary_class(
     max_iter: int = 100,
     slope_window: int = 5,
     batch_size: int = 512,
+    lr: float = 1e-3,
 ) -> EvaluationResult:
+    """Trains a linear evaluation model on top of the encoder.
+
+    Model selection is performed by looking at the loss of the testing set and selcting the
+    model with the lowest loss. Additionally, this is done in tandem with a slope-based method
+    for estimating when the model has started to overfit on the training data. The test dataset
+    is used for model selection and final evaluation.
+
+    Args:
+        encoder: The encoder model. It should encode the data from the training sets into
+            a representation vector of size `encoder_dims`.
+        encoder_dims: The size of the representation vector.
+        device: The device used during training.
+        train_dataset: The training dataset.
+        test_dataset: The test dataset.
+        max_iter: The maximum number of epochs to run for.
+        slope_window: The number of epochs/loss values to use for slope calculation.
+        batch_size: The batch size to use during training.
+        lr: The learning rate to use for the optimizer during training.
+    Returns:
+        The evaluation result.
+    """
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=False)
     linear_model = LinearModelBinaryClass(encoder_dims)
     linear_model.to(device)
 
-    optimizer = T.optim.Adam(linear_model.parameters(), lr=1e-3)
+    optimizer = T.optim.Adam(linear_model.parameters(), lr=lr)
     loss_fn = T.nn.functional.binary_cross_entropy
 
     best_model = deepcopy(linear_model)
     best_val_loss = float('inf')
     val_loss_history = []
     for _ in trange(max_iter, desc="Linear evaluation"):
+        # Model training
         linear_model.train()
         for X, y in train_loader:
             X = X.to(device)
@@ -165,6 +244,7 @@ def linear_evaluation_binary_class(
             val_loss.backward()
             optimizer.step()
 
+        # Select the best model and to stop training early.
         with T.no_grad():
             linear_model.eval()
             val_losses = []
@@ -184,15 +264,16 @@ def linear_evaluation_binary_class(
                 best_model = deepcopy(linear_model)
 
             if len(val_loss_history) > slope_window:
-                lr = LinearRegression()
+                linreg = LinearRegression()
                 loss_last = val_loss_history[-slope_window:]
                 x = np.arange(len(loss_last)).reshape(-1, 1)
                 y = np.array(loss_last).reshape(-1, 1)
-                lr.fit(x, y)
+                linreg.fit(x, y)
 
-                if lr.coef_[0][0] > 0:
+                if linreg.coef_[0][0] > 0:
                     break
 
+    # Evaluation metrics are calculated.
     with T.no_grad():
         best_model.eval()
 
