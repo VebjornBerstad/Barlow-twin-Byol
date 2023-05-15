@@ -17,7 +17,7 @@ from swarm.callbacks import (EarlyStoppingFromSlopeCallback,
 from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_augmentation_config,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
-from swarm.dataset import AudioDataset, AudiosetDataset
+from swarm.dataset import AudiosetDataset, GtzanDataset
 from swarm.models import BarlowTwins, Encoder
 from swarm.utils import linear_evaluation_multiclass
 
@@ -80,8 +80,8 @@ def train_barlow_twins(
         labels_csv=config.audioset_train_csv_path,
         transform=transform,
     )
-    gtzan_train_dataset = AudioDataset(config.train_dir, transform=transform)
-    gtzan_val_dataset = AudioDataset(config.val_dir, transform=transform)
+    gtzan_train_dataset = GtzanDataset(config.train_dir, transforms=transform)
+    gtzan_val_dataset = GtzanDataset(config.val_dir, transforms=transform)
 
     audioset_dataset_len = len(audioset_dataset)
 
