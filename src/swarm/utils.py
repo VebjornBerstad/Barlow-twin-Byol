@@ -1,12 +1,12 @@
 from copy import deepcopy
 from dataclasses import dataclass
 
+import numpy as np
 import torch as T
+from sklearn.linear_model import LinearRegression
 from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional import accuracy, f1_score
 from tqdm import trange
-import numpy as np
-from sklearn.linear_model import LinearRegression
 
 
 @dataclass
