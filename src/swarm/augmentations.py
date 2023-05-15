@@ -54,11 +54,14 @@ class RandomLinearFader(nn.Module):
 class RandomResizeCrop(nn.Module):
     def __init__(self, virtual_crop_scale=(1.0, 1.5), freq_scale=(0.6, 1.5), time_scale=(0.6, 1.5)):
         super().__init__()
+        if time_scale[1] >= 1.0:
+            raise ValueError('time_scale[1] must be less than 1.0')
+        if freq_scale[1] >= 1.0:
+            raise ValueError('freq_scale[1] must be less than 1.0')
         self.virtual_crop_scale = virtual_crop_scale
         self.freq_scale = freq_scale
         self.time_scale = time_scale
         self.interpolation = 'bicubic'
-        assert time_scale[1] >= 1.0 and freq_scale[1] >= 1.0
 
     @staticmethod
     def get_params(virtual_crop_size, in_size, time_scale, freq_scale):
