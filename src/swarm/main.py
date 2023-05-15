@@ -1,17 +1,22 @@
 import argparse
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 
+import torch as T
 import torchvision.transforms as transforms
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
 
-from swarm.augmentations import RandomCropWidth, aug_pipeline
-from swarm.config import (parse_dvc_augmentation_config,
+import optuna
+from swarm.augmentations import RandomCropWidth, aug_pipeline, mel_aug
+from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
+                          parse_dvc_augmentation_config,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import BarlowTwins, ConvNet, LinearOnlineEvaluationCallback
+from swarm.utils import linear_evaluation_multiclass
 
 
 @dataclass
@@ -30,11 +35,34 @@ def parse_args() -> Config:
     return Config(**vars(args))
 
 
-def main():
-    config = parse_args()
-    training_config = parse_dvc_training_config()
-    augmentation_config = parse_dvc_augmentation_config()
-    gtzan_config = parse_dvc_gtzan_config()
+def train_barlow_twins(
+    trial: optuna.Trial,
+    config: Config,
+    gtzan_config: GtzanConfig,
+    _augmentation_config: AugmentationConfig,
+    _training_config: TrainingConfig,
+) -> float:
+    # augmentation_config: AugmentationConfig = AugmentationConfig(
+    #     rcw_target_frames=trial.suggest_int('rcw_target_frames', 32, 192),
+    #     mixup_ratio=trial.suggest_float('mixup_ratio', 0.1, 0.9),
+    #     mixup_memory_size=_augmentation_config.mixup_memory_size,
+    #     linear_fader_gain=trial.suggest_float('linear_fader_gain', 0.1, 0.9),
+    #     rrc_crop_scale_min=_augmentation_config.rrc_crop_scale_min,
+    #     rrc_crop_scale_max=trial.suggest_float('rrc_crop_scale_max', 1.0, 2.0),
+    #     rrc_freq_scale_min=trial.suggest_float('rrc_freq_scale_min', 0.2, 1.0),
+    #     rrc_freq_scale_max=trial.suggest_float('rrc_freq_scale_max', 1.0, 2.0),
+    #     rrc_time_scale_min=trial.suggest_float('rrc_time_scale_min', 0.2, 1.0),
+    #     rrc_time_scale_max=trial.suggest_float('rrc_time_scale_max', 1.0, 2.0),
+    # )
+    # training_config = TrainingConfig(
+    #     batch_size=_training_config.batch_size,
+    #     val_split=_training_config.val_split,
+    #     lr=trial.suggest_float('lr', 1e-6, 1e-1),
+    #     xcorr_lambda=trial.suggest_float('xcorr_lambda', 0.1, 0.9),
+    #     emb_dim_size=trial.suggest_categorical('emb_dim_size', [128, 256, 512, 1024, 22048, 4096]),
+    # )
+    augmentation_config = _augmentation_config
+    training_config = _training_config
 
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
@@ -92,14 +120,58 @@ def main():
     )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
-    barlow_byol_trainer = Trainer(
+    trainer = Trainer(
         devices=1,
         accelerator='gpu',
-        max_epochs=500,
+        max_epochs=5,
         callbacks=[linear_evaluation],
         logger=logger,
     )
-    barlow_byol_trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
+    trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
+
+    encoder = T.nn.Sequential(
+        mel_aug(),
+        encoder_online,
+    )
+    loss_result = linear_evaluation_multiclass(
+        encoder=encoder,
+        encoder_dims=training_config.emb_dim_size,
+        device='cuda',
+        num_classes=gtzan_config.num_classes,
+        train_dataset=gtzan_train_dataset,
+        test_dataset=gtzan_val_dataset,
+    )
+
+    trial.set_user_attr('gtzan_val_acc', loss_result.acc)
+    trial.set_user_attr('gtzan_val_f1', loss_result.f1)
+    trial.set_user_attr('gtzan_val_loss', loss_result.loss)
+
+    return loss_result.loss
+
+
+def main():
+    config = parse_args()
+    training_config = parse_dvc_training_config()
+    augmentation_config = parse_dvc_augmentation_config()
+    gtzan_config = parse_dvc_gtzan_config()
+
+    objective = partial(
+        train_barlow_twins,
+        config=config,
+        gtzan_config=gtzan_config,
+        _augmentation_config=augmentation_config,
+        _training_config=training_config,
+    )
+
+    optuna_logs_dir = Path('optuna')
+    if not optuna_logs_dir.exists():
+        optuna_logs_dir.mkdir(parents=True)
+
+    study = optuna.create_study(
+        direction=optuna.study.StudyDirection.MINIMIZE,
+        storage=f'sqlite:///{optuna_logs_dir}/barlowtwins.db',
+    )
+    study.optimize(objective, n_trials=100)
 
 
 if __name__ == '__main__':
