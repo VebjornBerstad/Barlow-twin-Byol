@@ -2,6 +2,7 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from swarm.optimizers import LARS
+import typing as t
 
 
 class BarlowTwinsLoss(nn.Module):
@@ -68,6 +69,7 @@ class ConvNet(nn.Module):
             # nn.Dropout(0.3),
             nn.Linear(enc_conv_res.size(1), emb_dim_size),
             nn.BatchNorm1d(emb_dim_size),
+            nn.Tanh(),
         )
 
         self.encoder = nn.Sequential(
@@ -81,33 +83,25 @@ class ConvNet(nn.Module):
 
 
 class ProjectionHead(nn.Module):
-    def __init__(self, input_dim=2048, hidden_dim=4096, output_dim=8192):
+    def __init__(self, input_dim: int, n_layers: int, scaling_factor: float = 1.6):
         super().__init__()
 
-        self.projection_head = nn.Sequential(
-            nn.Linear(input_dim, hidden_dim, bias=False),
-            nn.BatchNorm1d(hidden_dim),
-            nn.LeakyReLU(),
-            # nn.Dropout(0.3),
-            nn.Linear(hidden_dim, output_dim, bias=False),
-            # nn.BatchNorm1d(hidden_dim),
-            # nn.LeakyReLU(),
-            # nn.Dropout(0.3),
-            # nn.Linear(hidden_dim, output_dim, bias=False),
-            # nn.LeakyReLU()
-        )
+        layer_dims = [input_dim] + [int(input_dim * scaling_factor ** i) for i in range(1, n_layers + 1)]
+
+        self.projection_head = nn.Sequential(*[
+            nn.Sequential(
+                nn.Linear(layer_dims[i], layer_dims[i + 1], bias=False),
+                nn.BatchNorm1d(layer_dims[i + 1]),
+                nn.LeakyReLU(),
+            )
+            for i in range(n_layers)
+        ])
 
         self.mean_pool = nn.AvgPool1d(kernel_size=2, stride=2)
         self.max_pool = nn.MaxPool1d(kernel_size=2, stride=2)
 
     def forward(self, x):
-        projected = self.projection_head(x)
-        concat = torch.cat((x, projected), dim=-1)
-        avg_pool = self.mean_pool(concat)
-        max_pool = self.max_pool(concat)
-        concat = torch.cat((avg_pool, max_pool), dim=-1)
-
-        return concat
+        return self.projection_head(x)
 
 
 class BarlowTwins(pl.LightningModule):
@@ -117,7 +111,7 @@ class BarlowTwins(pl.LightningModule):
                  encoder_out_dim: int,
                  learning_rate: float,
                  xcorr_lambda: float,
-                 augmentations: nn.Module
+                 augmentations: nn.Module,
                  ):
 
         super().__init__()
@@ -125,8 +119,8 @@ class BarlowTwins(pl.LightningModule):
 
         self.learning_rate = learning_rate
 
-        self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim))
-        self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim))
+        self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=2))
+        self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=2))
 
         self.loss = BarlowTwinsLoss(lambda_=xcorr_lambda)
 
@@ -166,6 +160,5 @@ class BarlowTwins(pl.LightningModule):
         self.target.train()
 
     def configure_optimizers(self):
-        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
-        optimizer = LARS(self.parameters(), lr=self.learning_rate)
+        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
         return optimizer
