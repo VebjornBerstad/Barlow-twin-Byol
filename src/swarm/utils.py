@@ -1,4 +1,4 @@
-"""Various utilities for the swarm package, including linear evaluation models 
+"""Various utilities for the swarm package, including linear evaluation models
 and training functions.
 """
 
