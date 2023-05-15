@@ -1,32 +1,10 @@
+"""Project models are defined here."""
+
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 
-
-class BarlowTwinsLoss(nn.Module):
-    def __init__(self, lambda_=5e-3):
-        super().__init__()
-
-        self.lambda_ = lambda_
-
-    def off_diagonal_ele(self, x):
-        n, m = x.shape
-        assert n == m
-        return x.flatten()[:-1].view(n - 1, n + 1)[:, 1:].flatten()
-
-    def forward(self, z1, z2):
-        assert z1.shape == z2.shape
-        # N x D, where N is the batch size and D is output dim of projection head
-        z1_norm = (z1 - torch.mean(z1, dim=0)) / torch.std(z1, dim=0)
-        z2_norm = (z2 - torch.mean(z2, dim=0)) / torch.std(z2, dim=0)
-
-        # cross_corr = torch.matmul(z1_norm.T, z2_norm) / self.batch_size
-        cross_corr = torch.matmul(z1_norm.T, z2_norm) / z1.shape[0]
-
-        on_diag = torch.diagonal(cross_corr).add_(-1).pow_(2).sum()
-        off_diag = self.off_diagonal_ele(cross_corr).pow_(2).sum()
-
-        return on_diag + self.lambda_ * off_diag
+from swarm.losses import CrossCorrelationLoss
 
 
 class ConvNet(nn.Module):
@@ -120,7 +98,7 @@ class BarlowTwins(pl.LightningModule):
         self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=1.5))
         self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=1.5))
 
-        self.loss = BarlowTwinsLoss(lambda_=xcorr_lambda)
+        self.loss = CrossCorrelationLoss(lambda_=xcorr_lambda)
 
     def forward(self, x):
         return self.online[0](x)
