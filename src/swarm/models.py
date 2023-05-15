@@ -1,6 +1,7 @@
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
+from swarm.optimizers import LARS
 
 
 class BarlowTwinsLoss(nn.Module):
@@ -165,5 +166,6 @@ class BarlowTwins(pl.LightningModule):
         self.target.train()
 
     def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        # optimizer = torch.optim.Adam(self.parameters(), lr=self.learning_rate)
+        optimizer = LARS(self.parameters(), lr=self.learning_rate)
         return optimizer
