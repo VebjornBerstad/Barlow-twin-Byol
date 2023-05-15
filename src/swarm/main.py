@@ -16,7 +16,7 @@ from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import BarlowTwins, ConvNet
-from swarm.callbacks import LinearOnlineEvaluationCallback, EarlyStoppingFromSlopeCallback
+from swarm.callbacks import LinearOnlineEvaluationCallback, EarlyStoppingFromSlopeCallback, LinearMulticlassEvaluationCallback
 from swarm.utils import linear_evaluation_multiclass
 
 
@@ -136,13 +136,25 @@ def train_barlow_twins(
         direction=EarlyStoppingFromSlopeCallback.DIRECTION_MINIMIZE,
         patience=5,
     )
+    eval_gtzan_callback = LinearMulticlassEvaluationCallback(
+        dataset_name="gtzan2",
+        num_classes=gtzan_config.num_classes,
+        train_dataset=gtzan_train_dataset,
+        val_dataset=gtzan_val_dataset,
+        augmentations=pre_aug_normalize,
+        encoder_dims=training_config.emb_dim_size,
+    )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
     trainer = Trainer(
         devices=1,
         accelerator='gpu',
         max_epochs=50,
-        callbacks=[linear_evaluation, early_stopping],
+        callbacks=[
+            linear_evaluation,
+            early_stopping,
+            eval_gtzan_callback,
+        ],
         logger=logger,
     )
     trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
