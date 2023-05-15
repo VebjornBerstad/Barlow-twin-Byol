@@ -44,19 +44,17 @@ class AudiosetDataset(Dataset):
         labels_desc_csv: Path,
         labels_csv: Path,
         transform: torch.nn.Module | Compose | None = None,
-        selected_labels: list[str] | None = None,
     ):
         self.data_root = audio_path
         self.transform = transform
         self.class_labels = pd.read_csv(labels_desc_csv)
 
         df_labels = pd.read_csv(labels_csv)
-        if selected_labels:
-            df_labels = df_labels[df_labels["positive_labels"].str.contains("|".join(selected_labels))]
         self.df_labels = df_labels.join(df_labels["positive_labels"].str.get_dummies(sep=","))
 
         self.ytid_to_label_idx = {ytid: idx for idx, ytid in enumerate(self.df_labels["YTID"].tolist())}
-        self.labels = torch.tensor(self.df_labels.iloc[:, 4:].to_numpy(dtype=np.int32))
+        self.df_labels_only = self.df_labels.iloc[:, 4:]
+        self.labels = torch.tensor(self.df_labels_only.to_numpy(dtype=np.int32))
 
         ytids = set(self.df_labels['YTID'].tolist())
         self.file_list = [x for x in audio_path.glob("*.pt") if x.stem in ytids]
@@ -77,13 +75,8 @@ class AudiosetDataset(Dataset):
 
         return x, y
 
+    def label_to_index(self, label: str) -> int:
+        return self.df_labels_only.columns.get_loc(label)
 
-if __name__ == '__main__':
-    ds_train = AudiosetDataset(
-        audio_path=Path('datasets/audioset_train_mel_split'),
-        labels_desc_csv=Path('datasets/audioset_metadata/class_labels_indices.csv'),
-        labels_csv=Path('datasets/audioset_metadata/train.csv'),
-        selected_labels=['/m/09x0r']
-    )
-
-    print(ds_train[0])
+    def index_to_label(self, index: int) -> str:
+        return str(self.df_labels_only.columns[index])
