@@ -4,10 +4,11 @@ import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torchmetrics.functional import accuracy
 import numpy as np
 from sklearn.linear_model import LinearRegression
+from swarm.utils import linear_evaluation_binary_class, linear_evaluation_multiclass
 
 
 class LinearOnlineEvaluationCallback(pl.Callback):
@@ -156,3 +157,66 @@ class EarlyStoppingFromSlopeCallback(pl.Callback):
                 # If the slope is positive, stop training
                 if slope > self.stop_slope_magnitude:
                     trainer.should_stop = True
+
+
+class LinearBinaryEvaluationCallback(pl.Callback):
+    def __init__(
+        self,
+        dataset_name: str,
+        train_dataloader: Dataset,
+        val_dataloader: Dataset,
+        augmentations: nn.Module,
+        encoder_dims: int,
+
+    ):
+        super().__init__()
+        self.dataset_name = dataset_name
+        self.train_dataloader = train_dataloader
+        self.val_dataloader = val_dataloader
+        self.augmentations = augmentations
+        self.encoder_dims = encoder_dims
+
+    def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+        res = linear_evaluation_binary_class(
+            encoder=pl_module,
+            encoder_dims=self.encoder_dims,
+            device=pl_module.device,
+            train_dataset=self.train_dataloader,
+            test_dataset=self.val_dataloader,
+        )
+        pl_module.log(f"{self.dataset_name}_val_acc", res.acc, on_step=False, on_epoch=True)
+        pl_module.log(f"{self.dataset_name}_val_f1", res.f1, on_step=False, on_epoch=True)
+        pl_module.log(f"{self.dataset_name}_val_loss", res.loss, on_step=False, on_epoch=True)
+
+
+class LinearMulticlassEvaluationCallback(pl.Callback):
+    def __init__(
+        self,
+        dataset_name: str,
+        num_classes: int,
+        train_dataloader: Dataset,
+        val_dataloader: Dataset,
+        augmentations: nn.Module,
+        encoder_dims: int,
+
+    ):
+        super().__init__()
+        self.num_classes = num_classes
+        self.dataset_name = dataset_name
+        self.train_dataloader = train_dataloader
+        self.val_dataloader = val_dataloader
+        self.augmentations = augmentations
+        self.encoder_dims = encoder_dims
+
+    def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+        res = linear_evaluation_multiclass(
+            encoder=pl_module,
+            num_classes=self.num_classes,
+            encoder_dims=self.encoder_dims,
+            device=pl_module.device,
+            train_dataset=self.train_dataloader,
+            test_dataset=self.val_dataloader,
+        )
+        pl_module.log(f"{self.dataset_name}_val_acc", res.acc, on_step=False, on_epoch=True)
+        pl_module.log(f"{self.dataset_name}_val_f1", res.f1, on_step=False, on_epoch=True)
+        pl_module.log(f"{self.dataset_name}_val_loss", res.loss, on_step=False, on_epoch=True)
