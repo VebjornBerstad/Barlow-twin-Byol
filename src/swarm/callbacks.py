@@ -139,24 +139,25 @@ class EarlyStoppingFromSlopeCallback(pl.Callback):
 
     def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         # Get the metric value
-        m = trainer.callback_metrics[self.metric_name]
-        if m is None or torch.isnan(m).any():
-            trainer.should_stop = True
-        else:
-            self.metric_history.append(trainer.callback_metrics[self.metric_name].item())
-            if len(self.metric_history) >= self.patience:
-                lr = LinearRegression()
-                selection = self.metric_history[-self.patience:]
-                x = np.arange(len(selection)).reshape(-1, 1)
-                y = np.array(selection).reshape(-1, 1)
-                lr.fit(x, y)
-                slope = lr.coef_[0][0]
-                if self.direction == self.DIRECTION_MAXIMIZE:
-                    slope *= -1
+        if self.metric_name in trainer.callback_metrics:
+            m = trainer.callback_metrics[self.metric_name]
+            if m is None or torch.isnan(m).any():
+                trainer.should_stop = True
+            else:
+                self.metric_history.append(trainer.callback_metrics[self.metric_name].item())
+                if len(self.metric_history) >= self.patience:
+                    lr = LinearRegression()
+                    selection = self.metric_history[-self.patience:]
+                    x = np.arange(len(selection)).reshape(-1, 1)
+                    y = np.array(selection).reshape(-1, 1)
+                    lr.fit(x, y)
+                    slope = lr.coef_[0][0]
+                    if self.direction == self.DIRECTION_MAXIMIZE:
+                        slope *= -1
 
-                # If the slope is positive, stop training
-                if slope > self.stop_slope_magnitude:
-                    trainer.should_stop = True
+                    # If the slope is positive, stop training
+                    if slope > self.stop_slope_magnitude:
+                        trainer.should_stop = True
 
 
 class LinearBinaryEvaluationCallback(pl.Callback):
