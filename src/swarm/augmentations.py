@@ -22,20 +22,29 @@ class RandomCropWidth(nn.Module):
         return log_mel_spectrogram
 
 
-class PostNormalize(nn.Module):
+class Normalize(nn.Module):
     def __init__(self, eps=1e-8):
-        super(PostNormalize, self).__init__()
+        super(Normalize, self).__init__()
         self.eps = eps
 
+        self.mean: torch.Tensor = torch.tensor([0.0], requires_grad=False)
+        self.std: torch.Tensor = torch.tensor([1.0], requires_grad=False)
+        self.examples_seen: int = 0
+
     def forward(self, x):
-        # min_val = torch.min(x)
-        # max_val = torch.max(x)
-        mean = torch.mean(x, dim=(0, 2, 3), keepdim=True)
-        std = torch.std(x, dim=(0, 2, 3), unbiased=False, keepdim=True) + self.eps
-        # mean = (mean-min_val)/(max_val-min_val)
-        # std = std/(max_val-min_val)
-        x_normalized = (x - mean) / std
-        return x_normalized
+        batch_size = x.shape[0]
+
+        batch_mean = torch.mean(x, dim=(0, 2, 3), keepdim=True)
+        self.mean = self.mean.to(x.device)
+        self.mean = (self.mean * self.examples_seen + batch_mean * batch_size) / (self.examples_seen + batch_size)
+
+        batch_std = torch.std(x, dim=(0, 2, 3), unbiased=False, keepdim=True).to(x.device) + self.eps
+        self.std = self.std.to(x.device)
+        self.std = (self.std * self.examples_seen + batch_std * batch_size) / (self.examples_seen + batch_size)
+
+        self.examples_seen += batch_size
+
+        return (x - self.mean) / self.std
 
 
 class RandomLinearFader(nn.Module):
@@ -137,6 +146,7 @@ def aug_pipeline(
     rrc_time_scale_max: float = 1.5,
 ):
     return nn.Sequential(
+        Normalize(),
         MixupBYOLA(ratio=mixup_ratio, n_memory=mixup_memory_size),
         RandomResizeCrop(
             virtual_crop_scale=(rrc_crop_scale_min, rrc_crop_scale_max),
@@ -146,11 +156,5 @@ def aug_pipeline(
         RandomLinearFader(
             gain=linear_fader_gain,
         ),
-        PostNormalize(),
-    )
-
-
-def mel_aug():
-    return nn.Sequential(
-        PostNormalize(),
+        Normalize(),
     )

@@ -10,7 +10,7 @@ from pytorch_lightning.loggers import TensorBoardLogger
 from torch.utils.data import DataLoader, random_split
 
 import optuna
-from swarm.augmentations import RandomCropWidth, aug_pipeline, mel_aug
+from swarm.augmentations import RandomCropWidth, aug_pipeline
 from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_augmentation_config,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
@@ -101,6 +101,8 @@ def train_barlow_twins(
         rrc_time_scale_max=augmentation_config.rrc_time_scale_max,
     )
 
+    pre_aug_normalize = augmentations[0]
+
     encoder_online = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     encoder_target = ConvNet(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     barlow_byol = BarlowTwins(
@@ -116,7 +118,8 @@ def train_barlow_twins(
         encoder_output_dim=training_config.emb_dim_size,
         num_classes=gtzan_config.num_classes,
         train_dataloader=gtzan_train_dataloader,
-        val_dataloader=gtzan_val_dataloader
+        val_dataloader=gtzan_val_dataloader,
+        augmentations=pre_aug_normalize,
     )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
@@ -130,7 +133,7 @@ def train_barlow_twins(
     trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
 
     encoder = T.nn.Sequential(
-        mel_aug(),
+        pre_aug_normalize,
         encoder_online,
     )
     loss_result = linear_evaluation_multiclass(

@@ -7,8 +7,6 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchmetrics.functional import accuracy
 
-from swarm.augmentations import mel_aug
-
 
 class BarlowTwinsLoss(nn.Module):
     def __init__(self, lambda_=5e-3):
@@ -183,13 +181,14 @@ class LinearOnlineEvaluationCallback(pl.Callback):
             num_classes: int,
             train_dataloader: DataLoader,
             val_dataloader: DataLoader,
+            augmentations: nn.Module,  # Pre-normalize from aug_pipeline
     ):
         super().__init__()
         self.optimizer: torch.optim.Optimizer
 
         self.encoder_output_dim = encoder_output_dim
         self.num_classes = num_classes
-        self.augmentations = mel_aug()
+        self.augmentations = augmentations
 
         self.train_dataloader = train_dataloader
         self.val_dataloader = val_dataloader
