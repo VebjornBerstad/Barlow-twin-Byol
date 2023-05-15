@@ -117,8 +117,8 @@ class BarlowTwins(pl.LightningModule):
 
         self.learning_rate = learning_rate
 
-        self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=2))
-        self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=2))
+        self.online = nn.Sequential(encoder_online, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=1.5))
+        self.target = nn.Sequential(encoder_target, ProjectionHead(input_dim=encoder_out_dim, n_layers=3, scaling_factor=1.5))
 
         self.loss = BarlowTwinsLoss(lambda_=xcorr_lambda)
 
