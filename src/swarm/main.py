@@ -16,8 +16,9 @@ from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
 from swarm.dataset import AudioDataset, AudiosetDataset
 from swarm.models import BarlowTwins, ConvNet
-from swarm.callbacks import LinearOnlineEvaluationCallback, EarlyStoppingFromSlopeCallback, LinearMulticlassEvaluationCallback
+from swarm.callbacks import LinearOnlineEvaluationCallback, EarlyStoppingFromSlopeCallback
 from swarm.utils import linear_evaluation_multiclass
+from torch.cuda import OutOfMemoryError
 
 
 @dataclass
@@ -47,27 +48,26 @@ def train_barlow_twins(
     _augmentation_config: AugmentationConfig,
     _training_config: TrainingConfig,
 ) -> float:
-    # augmentation_config: AugmentationConfig = AugmentationConfig(
-    #     rcw_target_frames=trial.suggest_int('rcw_target_frames', 32, 192),
-    #     mixup_ratio=trial.suggest_float('mixup_ratio', 0.1, 0.9),
-    #     mixup_memory_size=_augmentation_config.mixup_memory_size,
-    #     linear_fader_gain=trial.suggest_float('linear_fader_gain', 0.1, 0.9),
-    #     rrc_crop_scale_min=_augmentation_config.rrc_crop_scale_min,
-    #     rrc_crop_scale_max=trial.suggest_float('rrc_crop_scale_max', 1.0, 2.0),
-    #     rrc_freq_scale_min=trial.suggest_float('rrc_freq_scale_min', 0.2, 1.0),
-    #     rrc_freq_scale_max=trial.suggest_float('rrc_freq_scale_max', 1.0, 2.0),
-    #     rrc_time_scale_min=trial.suggest_float('rrc_time_scale_min', 0.2, 1.0),
-    #     rrc_time_scale_max=trial.suggest_float('rrc_time_scale_max', 1.0, 2.0),
-    # )
-    # training_config = TrainingConfig(
-    #     batch_size=_training_config.batch_size,
-    #     val_split=_training_config.val_split,
-    #     lr=trial.suggest_float('lr', 1e-6, 1e-1),
-    #     xcorr_lambda=trial.suggest_float('xcorr_lambda', 0.1, 0.9),
-    #     emb_dim_size=trial.suggest_categorical('emb_dim_size', [128, 256, 512, 1024, 22048, 4096]),
-    # )
-    augmentation_config = _augmentation_config
-    training_config = _training_config
+    augmentation_config: AugmentationConfig = AugmentationConfig(
+        rcw_target_frames=96,
+        mixup_ratio=trial.suggest_float('mixup_ratio', 0.1, 0.9),
+        mixup_memory_size=_augmentation_config.mixup_memory_size,
+        linear_fader_gain=trial.suggest_float('linear_fader_gain', 0.1, 0.9),
+        rrc_crop_scale_min=_augmentation_config.rrc_crop_scale_min,
+        rrc_crop_scale_max=trial.suggest_float('rrc_crop_scale_max', 1.0, 2.0),
+        rrc_freq_scale_min=trial.suggest_float('rrc_freq_scale_min', 0.2, 1.0),
+        rrc_freq_scale_max=trial.suggest_float('rrc_freq_scale_max', 1.0, 2.0),
+        rrc_time_scale_min=trial.suggest_float('rrc_time_scale_min', 0.2, 1.0),
+        rrc_time_scale_max=trial.suggest_float('rrc_time_scale_max', 1.0, 2.0),
+    )
+    training_config = TrainingConfig(
+        batch_size=_training_config.batch_size,
+        val_split=_training_config.val_split,
+        lr=trial.suggest_float('lr', 1e-6, 1e-1),
+        xcorr_lambda=trial.suggest_float('xcorr_lambda', 0.1, 0.9),
+        emb_dim_size=_training_config.emb_dim_size,
+        early_stopping_patience=_training_config.early_stopping_patience,
+    )
 
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
@@ -134,16 +134,16 @@ def train_barlow_twins(
     early_stopping = EarlyStoppingFromSlopeCallback(
         metric_name='gtzan_val_loss',
         direction=EarlyStoppingFromSlopeCallback.DIRECTION_MINIMIZE,
-        patience=5,
+        patience=training_config.early_stopping_patience,
     )
-    eval_gtzan_callback = LinearMulticlassEvaluationCallback(
-        dataset_name="gtzan2",
-        num_classes=gtzan_config.num_classes,
-        train_dataset=gtzan_train_dataset,
-        val_dataset=gtzan_val_dataset,
-        augmentations=pre_aug_normalize,
-        encoder_dims=training_config.emb_dim_size,
-    )
+    # eval_gtzan_callback = LinearMulticlassEvaluationCallback(
+    #     dataset_name="gtzan",
+    #     num_classes=gtzan_config.num_classes,
+    #     train_dataset=gtzan_train_dataset,
+    #     val_dataset=gtzan_val_dataset,
+    #     augmentations=pre_aug_normalize,
+    #     encoder_dims=training_config.emb_dim_size,
+    # )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
     trainer = Trainer(
@@ -153,7 +153,7 @@ def train_barlow_twins(
         callbacks=[
             linear_evaluation,
             early_stopping,
-            eval_gtzan_callback,
+            # eval_gtzan_callback,
         ],
         logger=logger,
     )
@@ -162,7 +162,7 @@ def train_barlow_twins(
     encoder = T.nn.Sequential(
         pre_aug_normalize,
         encoder_online,
-    )
+    ).cuda()
     loss_result = linear_evaluation_multiclass(
         encoder=encoder,
         encoder_dims=training_config.emb_dim_size,
@@ -201,7 +201,15 @@ def main():
         direction=optuna.study.StudyDirection.MINIMIZE,
         storage=f'sqlite:///{optuna_logs_dir}/barlowtwins.db',
     )
-    study.optimize(objective, n_trials=100)
+    study.optimize(
+        objective,
+        n_trials=100,
+        catch=(
+            RuntimeError,
+            ValueError,
+            OutOfMemoryError  # type: ignore
+        ),
+    )
 
 
 if __name__ == '__main__':

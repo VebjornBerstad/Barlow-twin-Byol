@@ -30,6 +30,7 @@ class TrainingConfig:
     lr: float
     xcorr_lambda: float
     emb_dim_size: int
+    early_stopping_patience: int
 
 
 def parse_dvc_training_config() -> TrainingConfig:
@@ -42,6 +43,7 @@ def parse_dvc_training_config() -> TrainingConfig:
         lr=training_params['lr'],
         xcorr_lambda=training_params['xcorr_lambda'],
         emb_dim_size=training_params['emb_dim_size'],
+        early_stopping_patience=training_params['early_stopping_patience'],
     )
 
 

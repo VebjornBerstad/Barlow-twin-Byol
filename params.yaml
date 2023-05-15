@@ -13,11 +13,12 @@ datasets:
     num_classes: 10
   
 training:
-  batch_size: 512
+  batch_size: 128
   val_split: 0.1
   lr: 0.00005
   xcorr_lambda: 0.005
-  emb_dim_size: 4096
+  emb_dim_size: 256
+  early_stopping_patience: 10
 
 augmentations:
   random_crop_width:
