@@ -1,3 +1,11 @@
+"""This module contains various configuration classes for the project, and acts as a way
+to acces the DVC params.yaml file.
+
+When adding new sections to the DVC params file, make sure to include them here. Use the
+existing classes/functions as a guide.
+"""
+
+
 from dataclasses import dataclass
 
 import dvc.api as dvc_api
@@ -5,6 +13,7 @@ import dvc.api as dvc_api
 
 @dataclass
 class SpectrogramConfig:
+    """Contains information about the DVC spectrogram params."""
     target_sample_rate: int
     n_mels: int
     f_min: int
@@ -12,6 +21,10 @@ class SpectrogramConfig:
 
 
 def parse_dvc_spectrogram_config() -> SpectrogramConfig:
+    """
+    Returns:
+        A SpectrogramConfig object containing the spectrogram params.
+    """
     params = dvc_api.params_show()
     spectrogram_params = params['spectrogram']
 
@@ -25,6 +38,7 @@ def parse_dvc_spectrogram_config() -> SpectrogramConfig:
 
 @dataclass
 class TrainingConfig:
+    """Contains information about the DVC training params."""
     batch_size: int
     val_split: float
     lr: float
@@ -34,6 +48,10 @@ class TrainingConfig:
 
 
 def parse_dvc_training_config() -> TrainingConfig:
+    """
+    Returns:
+        A TrainingConfig object containing the training params.
+    """
     params = dvc_api.params_show()
     training_params = params['training']
 
@@ -49,6 +67,7 @@ def parse_dvc_training_config() -> TrainingConfig:
 
 @dataclass
 class AugmentationConfig:
+    """Contains information about the DVC augmentation params."""
     rcw_target_frames: int
     mixup_ratio: float
     mixup_memory_size: int
@@ -62,6 +81,10 @@ class AugmentationConfig:
 
 
 def parse_dvc_augmentation_config() -> AugmentationConfig:
+    """
+    Returns:
+        An AugmentationConfig object containing the augmentation params.
+    """
     params = dvc_api.params_show()
     augmentation_params = params['augmentations']
 
@@ -86,6 +109,7 @@ def parse_dvc_augmentation_config() -> AugmentationConfig:
 
 @dataclass
 class GtzanConfig:
+    """Contains information about the DVC GTZAN dataset params."""
     train_val_split: float
     segment_length_sec: float
     hop_length_sec: float
@@ -93,6 +117,10 @@ class GtzanConfig:
 
 
 def parse_dvc_gtzan_config() -> GtzanConfig:
+    """
+    Returns:
+        A GtzanConfig object containing the GTZAN dataset params.
+    """
     params = dvc_api.params_show()
     gtzan_params = params['datasets']['gtzan']
 
