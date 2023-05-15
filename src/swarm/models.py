@@ -52,6 +52,17 @@ class ConvNet(nn.Module):
             nn.BatchNorm2d(64),
             nn.LeakyReLU(),
             nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding='same'),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding='same'),
+            nn.BatchNorm2d(64),
+            nn.LeakyReLU(),
+            nn.MaxPool2d(kernel_size=2, stride=2),
+
             nn.Flatten(),
         ).to(device)
 
@@ -62,7 +73,7 @@ class ConvNet(nn.Module):
             # nn.LeakyReLU(),
             # nn.Dropout(0.3),
             nn.Linear(enc_conv_res.size(1), emb_dim_size),
-            # nn.LeakyReLU(),
+            nn.BatchNorm1d(emb_dim_size),
         )
 
         self.encoder = nn.Sequential(
