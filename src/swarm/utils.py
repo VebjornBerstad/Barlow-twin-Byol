@@ -23,7 +23,7 @@ class LinearModelMulticlass(T.nn.Module):
         self.softmax = T.nn.Softmax(dim=1)
 
     def forward(self, x: T.Tensor) -> T.Tensor:
-        return self.linear(x)
+        return self.softmax(self.linear(x))
 
 
 def linear_evaluation_multiclass(
@@ -47,7 +47,6 @@ def linear_evaluation_multiclass(
 
     best_model = deepcopy(linear_model)
     best_val_loss = float('inf')
-    encoder = encoder.to(device)
     val_loss_history = []
     for _ in trange(max_iter, desc="Linear evaluation"):
         linear_model.train()
@@ -149,7 +148,6 @@ def linear_evaluation_binary_class(
 
     best_model = deepcopy(linear_model)
     best_val_loss = float('inf')
-    encoder = encoder.to(device)
     val_loss_history = []
     for _ in trange(max_iter, desc="Linear evaluation"):
         linear_model.train()
