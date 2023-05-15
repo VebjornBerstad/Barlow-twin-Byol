@@ -1,6 +1,6 @@
 """Custom optimizers for the swarm project.
 
-LARS is not out code and is copied from:
+LARS is not our code and is copied from:
 https://github.com/Lightning-Universe/lightning-bolts/blob/master/pl_bolts/optimizers/lars.py
 """
 
