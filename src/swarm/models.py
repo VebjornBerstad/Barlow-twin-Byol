@@ -1,8 +1,6 @@
 import pytorch_lightning as pl
 import torch
 import torch.nn as nn
-from swarm.optimizers import LARS
-import typing as t
 
 
 class BarlowTwinsLoss(nn.Module):
