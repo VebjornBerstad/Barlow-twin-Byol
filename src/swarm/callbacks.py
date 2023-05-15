@@ -163,26 +163,25 @@ class LinearBinaryEvaluationCallback(pl.Callback):
     def __init__(
         self,
         dataset_name: str,
-        train_dataloader: Dataset,
-        val_dataloader: Dataset,
+        train_dataset: Dataset,
+        val_dataset: Dataset,
         augmentations: nn.Module,
         encoder_dims: int,
-
     ):
         super().__init__()
         self.dataset_name = dataset_name
-        self.train_dataloader = train_dataloader
-        self.val_dataloader = val_dataloader
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
         self.augmentations = augmentations
         self.encoder_dims = encoder_dims
 
-    def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+    def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         res = linear_evaluation_binary_class(
-            encoder=pl_module,
+            encoder=torch.nn.Sequential(self.augmentations, pl_module),
             encoder_dims=self.encoder_dims,
             device=pl_module.device,
-            train_dataset=self.train_dataloader,
-            test_dataset=self.val_dataloader,
+            train_dataset=self.train_dataset,
+            test_dataset=self.val_dataset,
         )
         pl_module.log(f"{self.dataset_name}_val_acc", res.acc, on_step=False, on_epoch=True)
         pl_module.log(f"{self.dataset_name}_val_f1", res.f1, on_step=False, on_epoch=True)
@@ -194,28 +193,27 @@ class LinearMulticlassEvaluationCallback(pl.Callback):
         self,
         dataset_name: str,
         num_classes: int,
-        train_dataloader: Dataset,
-        val_dataloader: Dataset,
+        train_dataset: Dataset,
+        val_dataset: Dataset,
         augmentations: nn.Module,
         encoder_dims: int,
-
     ):
         super().__init__()
         self.num_classes = num_classes
         self.dataset_name = dataset_name
-        self.train_dataloader = train_dataloader
-        self.val_dataloader = val_dataloader
+        self.train_dataset = train_dataset
+        self.val_dataset = val_dataset
         self.augmentations = augmentations
         self.encoder_dims = encoder_dims
 
-    def on_validation_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+    def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
         res = linear_evaluation_multiclass(
-            encoder=pl_module,
+            encoder=torch.nn.Sequential(self.augmentations, pl_module),
             num_classes=self.num_classes,
             encoder_dims=self.encoder_dims,
             device=pl_module.device,
-            train_dataset=self.train_dataloader,
-            test_dataset=self.val_dataloader,
+            train_dataset=self.train_dataset,
+            test_dataset=self.val_dataset,
         )
         pl_module.log(f"{self.dataset_name}_val_acc", res.acc, on_step=False, on_epoch=True)
         pl_module.log(f"{self.dataset_name}_val_f1", res.f1, on_step=False, on_epoch=True)
