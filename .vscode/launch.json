@@ -27,7 +27,6 @@
                 "--input_dir", "./temp/gtzan_wavs/",
                 "--output_dir_train", "./datasets/gtzan_train_mel_split/",
                 "--output_dir_val", "./datasets/gtzan_val_mel_split/",
-
             ]
         },
         {
@@ -55,7 +54,6 @@
                 "--audio_dir", "datasets/audioset_train_mel_split",
                 "--audioset_train_csv_path", "datasets/audioset_metadata/train.csv",
                 "--audioset_class_labels_indices_csv_path", "datasets/audioset_metadata/class_labels_indices.csv",
-                "--model_dir", "./models/",
             ]
         },
         {
@@ -72,6 +70,19 @@
                 "--audioset_class_labels_indices_csv_path", "datasets/audioset_metadata/class_labels_indices.csv",
                 "--encoder_path", "./models/encoder.pth",
                 "--pre_normalizer_path", "./models/pre_normalizer.pth",
+                "--model_path", "./models/model.pth",
+            ]
+        },
+        {
+            "name": "Run test",
+            "type": "python",
+            "request": "launch",
+            "module": "swarm.test",
+            "justMyCode": true,
+            "args": [
+                "--model_path", "./models/model.pth",
+                "--gtzan_path_test", "./datasets/gtzan_val_mel_split",
+                "--linear_eval_model_path", "./models/linear_eval_model.pth",
             ]
         },
         {

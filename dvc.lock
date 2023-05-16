@@ -87,9 +87,9 @@ stages:
       nfiles: 19642
   train_barlow_twins:
     cmd: ' rm -f ./models/model.pth && python -m swarm.train --train_dir datasets/gtzan_train_mel_split
-      --val_dir datasets/gtzan_val_mel_split --audio_dir datasets/audioset_train_mel_split
-      --audioset_train_csv_path datasets/audioset_metadata/train.csv --audioset_class_labels_indices_csv_path
-      datasets/audioset_metadata/class_labels_indices.csv --model_path ./models/model.pth '
+      --audio_dir datasets/audioset_train_mel_split --audioset_train_csv_path datasets/audioset_metadata/train.csv
+      --audioset_class_labels_indices_csv_path datasets/audioset_metadata/class_labels_indices.csv
+      --model_path ./models/model.pth '
     deps:
     - path: ./datasets/audioset_metadata/class_labels_indices.csv
       md5: 68c0b5c199d6cc789852b144cc3ab500
@@ -105,10 +105,6 @@ stages:
       md5: dedebac35a96eabd673745ca51f6607d.dir
       size: 614026019
       nfiles: 2389
-    - path: ./datasets/gtzan_val_mel_split/
-      md5: bfb2e324902cf9c9ef30a263dc9a6a56.dir
-      size: 153956293
-      nfiles: 599
     - path: src/swarm/augmentations.py
       md5: 85999353e945895b6633c1b9b07f7be4
       size: 6002
@@ -128,8 +124,8 @@ stages:
       md5: 0dd10bd94c3f39be66fe84c3a020c48f
       size: 7745
     - path: src/swarm/train.py
-      md5: 32ccacaa254864e80b2cd9ec77267429
-      size: 6146
+      md5: 48211c4db410d489df8ebf4440147e2c
+      size: 6670
     - path: src/swarm/utils.py
       md5: f9073087736419f6a4f6a0e0973dec60
       size: 10055
@@ -168,10 +164,10 @@ stages:
           max_epochs: 50
     outs:
     - path: ./models/model.pth
-      md5: 68424e53c704d60fed897e878df17a30
+      md5: b9f0b4908c651c165fb34fe1f10479a0
       size: 6777768
   eval_barlow_twins:
-    cmd: ' rm -rf ./models/linear_eval_model.pth && python -m swarm.test --model_path
+    cmd: ' rm -rf ./models/linear_eval_model.pth && python -m swarm.linear_eval --model_path
       ./models/model.pth --gtzan_path_train ./datasets/gtzan_train_mel_split --gtzan_path_test
       ./datasets/gtzan_val_mel_split --linear_eval_model_path ./models/linear_eval_model.pth '
     deps:
@@ -184,7 +180,7 @@ stages:
       size: 153956293
       nfiles: 599
     - path: ./models/model.pth
-      md5: 68424e53c704d60fed897e878df17a30
+      md5: 149254076d052f10187e6376823e9aa2
       size: 6777768
     - path: src/swarm/augmentations.py
       md5: 85999353e945895b6633c1b9b07f7be4
@@ -198,15 +194,15 @@ stages:
     - path: src/swarm/datasets.py
       md5: 8c523875a754aff064fa4d7e52ca5029
       size: 5281
+    - path: src/swarm/linear_eval.py
+      md5: 1487a29fdb010d353ec2d70f72e52ae7
+      size: 2605
     - path: src/swarm/losses.py
       md5: 1e66d8c128325e8809c9e93efacb1b14
       size: 2100
     - path: src/swarm/models.py
       md5: 0dd10bd94c3f39be66fe84c3a020c48f
       size: 7745
-    - path: src/swarm/test.py
-      md5: 3484ba1d9ad1a65ed93a5066443958bd
-      size: 2385
     - path: src/swarm/utils.py
       md5: f9073087736419f6a4f6a0e0973dec60
       size: 10055
@@ -245,5 +241,78 @@ stages:
           max_epochs: 50
     outs:
     - path: ./models/linear_eval_model.pth
-      md5: a5d67509507d6affd378e8bbe1932e41
+      md5: 54c83d65e9fe316425329f25001478da
+      size: 43087
+  train_linear_eval:
+    cmd: ' rm -rf ./models/linear_eval_model.pth && python -m swarm.linear_eval --model_path
+      ./models/model.pth --gtzan_path_train ./datasets/gtzan_train_mel_split --linear_eval_model_path
+      ./models/linear_eval_model.pth '
+    deps:
+    - path: ./datasets/gtzan_train_mel_split/
+      md5: dedebac35a96eabd673745ca51f6607d.dir
+      size: 614026019
+      nfiles: 2389
+    - path: ./models/model.pth
+      md5: b9f0b4908c651c165fb34fe1f10479a0
+      size: 6777768
+    - path: src/swarm/augmentations.py
+      md5: 85999353e945895b6633c1b9b07f7be4
+      size: 6002
+    - path: src/swarm/configs/augmentations.py
+      md5: 96b167624d74016a12e5a182c91d7d1c
+      size: 1436
+    - path: src/swarm/configs/training.py
+      md5: 87a4355834e87ff8f89f695999b67bb0
+      size: 934
+    - path: src/swarm/datasets.py
+      md5: 8c523875a754aff064fa4d7e52ca5029
+      size: 5281
+    - path: src/swarm/linear_eval.py
+      md5: 6ee85ef995fd3d5f7da6b8550c1f9e14
+      size: 2467
+    - path: src/swarm/losses.py
+      md5: 1e66d8c128325e8809c9e93efacb1b14
+      size: 2100
+    - path: src/swarm/models.py
+      md5: 0dd10bd94c3f39be66fe84c3a020c48f
+      size: 7745
+    - path: src/swarm/utils.py
+      md5: f9073087736419f6a4f6a0e0973dec60
+      size: 10055
+    params:
+      params.yaml:
+        augmentations:
+          random_crop_width:
+            target_frames: 96
+          mixup:
+            ratio: 0.243
+            memory_size: 2048
+          linear_fader:
+            gain: 0.727
+          random_resize_crop:
+            crop_scale:
+              min: 1.0
+              max: 1.361
+            freq_scale:
+              min: 0.596
+              max: 1.174
+            time_scale:
+              min: 0.901
+              max: 1.462
+        datasets.gtzan:
+          train_val_split: 0.8
+          segment_length_sec: 10.0
+          hop_length_sec: 10.0
+          num_classes: 10
+        training:
+          batch_size: 128
+          val_split: 0.1
+          lr: 1.642e-06
+          xcorr_lambda: 1.033
+          emb_dim_size: 1024
+          early_stopping_patience: 10
+          max_epochs: 50
+    outs:
+    - path: ./models/linear_eval_model.pth
+      md5: 8c6865e4c857108be708a78673a17ae4
       size: 43087

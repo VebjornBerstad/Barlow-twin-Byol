@@ -21,7 +21,6 @@ from swarm.models import BarlowTwins, Encoder
 @dataclass
 class Config:
     train_dir: Path
-    val_dir: Path
     audio_dir: Path
     audioset_train_csv_path: Path
     audioset_class_labels_indices_csv_path: Path
@@ -31,7 +30,6 @@ class Config:
 def parse_args() -> Config:
     parser = argparse.ArgumentParser()
     parser.add_argument('--train_dir', type=Path, help="The input directory containing the GTZAN dataset WAV files.", required=True)
-    parser.add_argument('--val_dir', type=Path, help='The output directory to save the training dataset.', required=True)
     parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.', required=True)
     parser.add_argument('--audioset_train_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
     parser.add_argument('--audioset_class_labels_indices_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
@@ -50,36 +48,37 @@ def main():
     if not config.model_path.exists():
         config.model_path.parent.mkdir(parents=True, exist_ok=True)
 
+    # Set up default dataset transform, which cuts a set number of frames
+    # from the mel spectrograms.
     transform = transforms.Compose([
-        RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
+        RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),
     ])
 
+    batch_size = training_config.batch_size
+
+    # Set up GTZAN.
+    gtzan_train_dataset = GtzanDataset(config.train_dir, transforms=transform)
+    gtzan_train_size = int(gtzan_config.train_val_split * len(gtzan_train_dataset))
+    gtzan_val_size = len(gtzan_train_dataset) - gtzan_train_size
+    gtzan_train_dataset, gtzan_val_dataset = random_split(gtzan_train_dataset, [gtzan_train_size, gtzan_val_size])
+    gtzan_train_dataloader = DataLoader(gtzan_train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
+    gtzan_val_dataloader = DataLoader(gtzan_val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=True)
+
+    # Set up Audioset.
     audioset_dataset = AudiosetDataset(
         audio_path=config.audio_dir,
         labels_desc_csv=config.audioset_class_labels_indices_csv_path,
         labels_csv=config.audioset_train_csv_path,
         transform=transform,
     )
-    gtzan_train_dataset = GtzanDataset(config.train_dir, transforms=transform)
-    gtzan_val_dataset = GtzanDataset(config.val_dir, transforms=transform)
-
     audioset_dataset_len = len(audioset_dataset)
-
-    # Split
     valid_size = int(training_config.val_split * audioset_dataset_len)
     train_size = audioset_dataset_len - valid_size
     audioset_train_dataset, audioset_val_dataset = random_split(audioset_dataset, [train_size, valid_size])
-
-    batch_size = training_config.batch_size
     audioset_train_dataloader = DataLoader(audioset_train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
     audioset_val_dataloader = DataLoader(audioset_val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=True)
 
-    gtzan_train_dataloader = DataLoader(gtzan_train_dataset, batch_size=batch_size, shuffle=True, num_workers=0, drop_last=True)
-    gtzan_val_dataloader = DataLoader(gtzan_val_dataset, batch_size=batch_size, shuffle=False, num_workers=0, drop_last=True)
-
-    X_train_example, _ = next(iter(audioset_train_dataloader))
-    X_train_example = X_train_example[:1]
-
+    # Set up training augmentations.
     augmentations = aug_pipeline(
         mixup_ratio=augmentation_config.mixup_ratio,
         mixup_memory_size=augmentation_config.mixup_memory_size,
@@ -92,10 +91,16 @@ def main():
         rrc_time_scale_max=augmentation_config.rrc_time_scale_max,
     )
 
+    # Extract pre-normalize augmentations, used to normalize input data.
     pre_aug_normalize = augmentations[0]
 
+    # Define encoders for the Barlow Twins mode.
+    X_train_example, _ = next(iter(audioset_train_dataloader))
+    X_train_example = X_train_example[:1]
     encoder_online = Encoder(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
     encoder_target = Encoder(in_channels=1, emb_dim_size=training_config.emb_dim_size, X_train_example=X_train_example, device='cuda')
+
+    # Set up the Barlow Twins model.
     barlow_byol = BarlowTwins(
         encoder_online=encoder_online,
         encoder_target=encoder_target,
@@ -105,6 +110,7 @@ def main():
         augmentations=augmentations
     )
 
+    # Define Pytorch Lightning callbacks and loggers.
     linear_evaluation = LinearOnlineEvaluationCallback(
         encoder_output_dim=training_config.emb_dim_size,
         num_classes=gtzan_config.num_classes,
@@ -119,6 +125,7 @@ def main():
     )
     logger = TensorBoardLogger("logs", name="BarlowTwins")
 
+    # Define the Pytorch lightning trainer.
     trainer = Trainer(
         devices=1,
         accelerator='gpu',
@@ -129,14 +136,14 @@ def main():
         ],
         logger=logger,
     )
+
+    # Fit the model to the data.
     trainer.fit(barlow_byol, train_dataloaders=audioset_train_dataloader, val_dataloaders=audioset_val_dataloader)
 
+    # Extract and save the trained model.
     best_model: BarlowTwins = early_stopping.best_module  # type: ignore
     best_encoder = best_model.target[0]
-
     model = T.nn.Sequential(pre_aug_normalize, best_encoder).eval()
-
-    # Save the encoder
     T.save(model, config.model_path)
 
 

@@ -58,7 +58,6 @@ stages:
       rm -f ./models/model.pth
       && python -m swarm.train
         --train_dir datasets/gtzan_train_mel_split
-        --val_dir datasets/gtzan_val_mel_split
         --audio_dir datasets/audioset_train_mel_split
         --audioset_train_csv_path datasets/audioset_metadata/train.csv
         --audioset_class_labels_indices_csv_path datasets/audioset_metadata/class_labels_indices.csv
@@ -74,7 +73,6 @@ stages:
       - src/swarm/train.py
       - src/swarm/utils.py
       - ./datasets/gtzan_train_mel_split/
-      - ./datasets/gtzan_val_mel_split/
       - ./datasets/audioset_train_mel_split/
       - ./datasets/audioset_metadata/class_labels_indices.csv
       - ./datasets/audioset_metadata/train.csv
@@ -84,13 +82,12 @@ stages:
       - datasets.gtzan
     outs:
       - ./models/model.pth
-  eval_barlow_twins:
+  train_linear_eval:
     cmd: "
       rm -rf ./models/linear_eval_model.pth
-      && python -m swarm.test
+      && python -m swarm.linear_eval
         --model_path ./models/model.pth
         --gtzan_path_train ./datasets/gtzan_train_mel_split
-        --gtzan_path_test ./datasets/gtzan_val_mel_split
         --linear_eval_model_path ./models/linear_eval_model.pth
     "
     deps:
@@ -100,14 +97,26 @@ stages:
       - src/swarm/datasets.py
       - src/swarm/models.py
       - src/swarm/losses.py
-      - src/swarm/test.py
+      - src/swarm/linear_eval.py
       - src/swarm/utils.py
       - ./models/model.pth
       - ./datasets/gtzan_train_mel_split/
-      - ./datasets/gtzan_val_mel_split/
     params:
       - training
       - augmentations
       - datasets.gtzan
     outs:
       - ./models/linear_eval_model.pth
+  test_linear_model:
+    cmd: "
+      python -m swarm.test
+        --model_path ./models/model.pth
+        --gtzan_path_test ./datasets/gtzan_val_mel_split
+        --linear_eval_model_path ./models/linear_eval_model.pth
+    "
+    deps:
+      - src/swarm/test.py
+      - src/swarm/configs/augmentations.py
+      - ./models/model.pth
+      - ./models/linear_eval_model.pth
+      - ./datasets/gtzan_val_mel_split/
