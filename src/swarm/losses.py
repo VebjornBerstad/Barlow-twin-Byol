@@ -5,7 +5,7 @@ import torch as T
 
 
 class CrossCorrelationLoss(T.nn.Module):
-    """Cross correlation loss, as defined in the Barlow Twins paper.
+    """Cross correlation loss, as defined in the Barlow Twins paper and https://github.com/facebookresearch/barlowtwins/blob/main/main.py
     """
 
     def __init__(self, lambda_: float = 5e-3, eps: float = 1e-12):
@@ -24,7 +24,7 @@ class CrossCorrelationLoss(T.nn.Module):
         Returns the off-diagonal elements of a square matrix.
 
         Ref. implementation from:
-        https://github.com/jonahanton/SSL_audio/blob/master/utils/utils.py
+        https://github.com/facebookresearch/barlowtwins/blob/main/main.py
 
         Args:
             x: A square matrix.
