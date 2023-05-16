@@ -17,7 +17,7 @@ from swarm.callbacks import (EarlyStoppingFromSlopeCallback,
 from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
                           parse_dvc_augmentation_config,
                           parse_dvc_gtzan_config, parse_dvc_training_config)
-from swarm.dataset import AudiosetDataset, GtzanDataset
+from swarm.datasets import AudiosetDataset, GtzanDataset
 from swarm.models import BarlowTwins, Encoder
 from swarm.utils import linear_evaluation_multiclass
 from copy import deepcopy
