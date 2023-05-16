@@ -8,7 +8,7 @@
             "name": "Download GTZAN",
             "type": "python",
             "request": "launch",
-            "module": "swarm.fetch_kaggle_dataset",
+            "module": "swarm.download.kaggle",
             "justMyCode": true,
             "args": [
                 "--kaggle_dataset", "andradaolteanu/gtzan-dataset-music-genre-classification",
@@ -21,7 +21,7 @@
             "name": "Prep GTZAN",
             "type": "python",
             "request": "launch",
-            "module": "swarm.preprocess_gtzan",
+            "module": "swarm.preprocess.kaggle",
             "justMyCode": true,
             "args": [
                 "--input_dir", "./temp/gtzan_wavs/",
@@ -34,7 +34,7 @@
             "name": "Prep Audioset Train",
             "type": "python",
             "request": "launch",
-            "module": "swarm.preprocess_audioset",
+            "module": "swarm.preprocess.audioset",
             "justMyCode": true,
             "args": [
                 "--input_zip", "./temp/audioset_train/audioset.zip",
@@ -44,10 +44,10 @@
             ]
         },
         {
-            "name": "Run main",
+            "name": "Run hyperparam search",
             "type": "python",
             "request": "launch",
-            "module": "swarm.main",
+            "module": "swarm.hyperparam_search",
             "justMyCode": true,
             "args": [
                 "--train_dir", "datasets/gtzan_train_mel_split",
