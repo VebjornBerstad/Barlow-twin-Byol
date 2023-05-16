@@ -15,8 +15,8 @@ datasets:
 training:
   batch_size: 128
   val_split: 0.1
-  lr: 0.00005
-  xcorr_lambda: 0.005
+  lr: 0.000001642
+  xcorr_lambda: 1.033
   emb_dim_size: 1024
   early_stopping_patience: 10
 
@@ -24,17 +24,17 @@ augmentations:
   random_crop_width:
     target_frames: 96
   mixup:
-    ratio: 0.4
+    ratio: 0.243
     memory_size: 2048
   linear_fader:
-    gain: 1.0
+    gain: 0.727
   random_resize_crop:
     crop_scale:
       min: 1.0
-      max: 1.5
+      max: 1.361
     freq_scale:
-      min: 0.6
-      max: 1.5
+      min: 0.596
+      max: 1.174
     time_scale:
-      min: 0.6
-      max: 1.5
+      min: 0.901
+      max: 1.462
