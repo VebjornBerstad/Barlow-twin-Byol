@@ -16,26 +16,26 @@ stages:
       && rm -rf ./temp/gtzan/ '
     deps:
     - path: src/swarm/config.py
-      md5: 5fd227ce8e8d58c05f33bfa20fbd83db
-      size: 551
+      md5: de100bf0ef57b07d9fe434c006901071
+      size: 3834
     - path: src/swarm/download/kaggle.py
       md5: 90770559818f46d2f15eca8885cd0d79
       size: 2013
     - path: src/swarm/preprocess/gtzan.py
-      md5: ce65156b71dba0f2e6bc1a88771b6f88
-      size: 4512
+      md5: 06c216a653b06181539ac7526a486aa8
+      size: 4104
     - path: src/swarm/preprocess/tools.py
       md5: 181fa4938c30358da3c641f40e7ddcc0
       size: 2317
     outs:
     - path: ./datasets/gtzan_train_mel_split/
-      md5: 5c608cec91d2300945994ad02d801c36.dir
-      size: 613768992
-      nfiles: 2388
+      md5: b1cf73dcf4fd2b5bc0aa7e6581d1a510.dir
+      size: 614026013
+      nfiles: 2389
     - path: ./datasets/gtzan_val_mel_split/
-      md5: 65874b0c6f2180c123e5c195df83280c.dir
-      size: 154213320
-      nfiles: 600
+      md5: 20bbaed26845b00f2ec5c239e0750f15.dir
+      size: 153956299
+      nfiles: 599
   fetch_audioset_train:
     cmd: ' rm -rf ./datasets/audioset_train_mel_split/ ./datasets/audioset_metadata/
       && python -m swarm.download.kaggle --kaggle_dataset zfturbo/audioset --temp_dir
