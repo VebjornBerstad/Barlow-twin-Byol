@@ -52,9 +52,9 @@ def train_barlow_twins(
 ) -> float:
     augmentation_config: AugmentationConfig = AugmentationConfig(
         rcw_target_frames=96,
-        mixup_ratio=trial.suggest_float('mixup_ratio', 0.1, 0.9),
+        mixup_ratio=trial.suggest_float('mixup_ratio', 0.0, 0.5),
         mixup_memory_size=_augmentation_config.mixup_memory_size,
-        linear_fader_gain=trial.suggest_float('linear_fader_gain', 0.1, 0.9),
+        linear_fader_gain=trial.suggest_float('linear_fader_gain', 0.0, 2.0),
         rrc_crop_scale_min=_augmentation_config.rrc_crop_scale_min,
         rrc_crop_scale_max=trial.suggest_float('rrc_crop_scale_max', 1.0, 2.0),
         rrc_freq_scale_min=trial.suggest_float('rrc_freq_scale_min', 0.2, 1.0),
@@ -65,8 +65,8 @@ def train_barlow_twins(
     training_config = TrainingConfig(
         batch_size=_training_config.batch_size,
         val_split=_training_config.val_split,
-        lr=trial.suggest_float('lr', 1e-6, 1e-1),
-        xcorr_lambda=trial.suggest_float('xcorr_lambda', 0.1, 0.9),
+        lr=trial.suggest_float('lr', 1e-6, 1e-1, log=True),
+        xcorr_lambda=trial.suggest_float('xcorr_lambda', 0.0, 2.0),
         emb_dim_size=_training_config.emb_dim_size,
         early_stopping_patience=_training_config.early_stopping_patience,
     )

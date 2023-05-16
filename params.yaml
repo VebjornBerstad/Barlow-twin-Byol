@@ -17,7 +17,7 @@ training:
   val_split: 0.1
   lr: 0.00005
   xcorr_lambda: 0.005
-  emb_dim_size: 256
+  emb_dim_size: 1024
   early_stopping_patience: 10
 
 augmentations:
