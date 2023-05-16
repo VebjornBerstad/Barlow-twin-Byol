@@ -8,7 +8,8 @@ import torch as T
 import torchaudio as TA
 from tqdm import tqdm
 
-from swarm.config import parse_dvc_gtzan_config, parse_dvc_spectrogram_config
+from swarm.configs.dataset_gtzan import parse_dvc_gtzan_config
+from swarm.configs.spectrograms import parse_dvc_spectrogram_config
 from swarm.preprocess.tools import (convert_waveform_to_lms,
                                     create_audio_segments)
 

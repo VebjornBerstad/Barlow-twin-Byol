@@ -19,6 +19,7 @@ training:
   xcorr_lambda: 1.033
   emb_dim_size: 1024
   early_stopping_patience: 10
+  max_epochs: 50
 
 augmentations:
   random_crop_width:

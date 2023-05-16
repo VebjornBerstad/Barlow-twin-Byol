@@ -55,6 +55,7 @@
                 "--audio_dir", "datasets/audioset_train_mel_split",
                 "--audioset_train_csv_path", "datasets/audioset_metadata/train.csv",
                 "--audioset_class_labels_indices_csv_path", "datasets/audioset_metadata/class_labels_indices.csv",
+                "--model_dir", "./models/",
             ]
         },
         {
@@ -69,6 +70,8 @@
                 "--audio_dir", "datasets/audioset_train_mel_split",
                 "--audioset_train_csv_path", "datasets/audioset_metadata/train.csv",
                 "--audioset_class_labels_indices_csv_path", "datasets/audioset_metadata/class_labels_indices.csv",
+                "--encoder_path", "./models/encoder.pth",
+                "--pre_normalizer_path", "./models/pre_normalizer.pth",
             ]
         },
         {

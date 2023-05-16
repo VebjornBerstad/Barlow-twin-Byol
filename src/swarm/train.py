@@ -11,8 +11,9 @@ from torch.utils.data import DataLoader, random_split
 from swarm.augmentations import RandomCropWidth, aug_pipeline
 from swarm.callbacks import (EarlyStoppingFromSlopeCallback,
                              LinearOnlineEvaluationCallback)
-from swarm.config import (parse_dvc_augmentation_config,
-                          parse_dvc_gtzan_config, parse_dvc_training_config)
+from swarm.configs.augmentations import parse_dvc_augmentation_config
+from swarm.configs.dataset_gtzan import parse_dvc_gtzan_config
+from swarm.configs.training import parse_dvc_training_config
 from swarm.datasets import AudiosetDataset, GtzanDataset
 from swarm.models import BarlowTwins, Encoder
 
@@ -24,7 +25,8 @@ class Config:
     audio_dir: Path
     audioset_train_csv_path: Path
     audioset_class_labels_indices_csv_path: Path
-    model_dir: Path
+    encoder_path: Path
+    pre_normalizer_path: Path
 
 
 def parse_args() -> Config:
@@ -34,7 +36,8 @@ def parse_args() -> Config:
     parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.', required=True)
     parser.add_argument('--audioset_train_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
     parser.add_argument('--audioset_class_labels_indices_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
-    parser.add_argument('--model_dir', type=Path, help='The output directory to save the validation dataset.', required=True)
+    parser.add_argument('--encoder_path', type=Path, help='The output path for the encoder model.', required=True)
+    parser.add_argument('--pre_normalizer_path', type=Path, help='The output path for the pre-normalization model.', required=True)
     args = parser.parse_args()
     return Config(**vars(args))
 
@@ -46,8 +49,10 @@ def main():
     gtzan_config = parse_dvc_gtzan_config()
 
     # Set up model folder.
-    if not config.model_dir.exists():
-        config.model_dir.mkdir(parents=True, exist_ok=True)
+    if not config.encoder_path.exists():
+        config.encoder_path.parent.mkdir(parents=True, exist_ok=True)
+    if not config.pre_normalizer_path.exists():
+        config.pre_normalizer_path.parent.mkdir(parents=True, exist_ok=True)
 
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
@@ -121,7 +126,7 @@ def main():
     trainer = Trainer(
         devices=1,
         accelerator='gpu',
-        max_epochs=50,
+        max_epochs=training_config.max_epochs,
         callbacks=[
             linear_evaluation,
             early_stopping,
@@ -134,12 +139,10 @@ def main():
     best_encoder = best_model.target[0]
 
     # Save the encoder
-    encoder_path = Path('models/encoder.pth')
-    T.save(best_encoder.state_dict(), encoder_path)
+    T.save(best_encoder.state_dict(), config.encoder_path)
 
     # Save the pre-augmentation normalization
-    pre_aug_normalize_path = Path('models/pre_aug_normalize.pth')
-    T.save(pre_aug_normalize.state_dict(), pre_aug_normalize_path)
+    T.save(pre_aug_normalize.state_dict(), config.pre_normalizer_path)
 
 
 if __name__ == '__main__':

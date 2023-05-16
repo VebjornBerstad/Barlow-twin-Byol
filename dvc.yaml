@@ -18,7 +18,7 @@ stages:
       - src/swarm/download/kaggle.py
       - src/swarm/preprocess/tools.py
       - src/swarm/preprocess/audioset.py
-      - src/swarm/config.py
+      - src/swarm/configs/spectrograms.py
     outs:
       - ./datasets/audioset_train_mel_split/
       - ./datasets/audioset_metadata/class_labels_indices.csv
@@ -44,7 +44,38 @@ stages:
       - src/swarm/download/kaggle.py
       - src/swarm/preprocess/tools.py
       - src/swarm/preprocess/gtzan.py
-      - src/swarm/config.py
+      - src/swarm/configs/spectrograms.py
     outs:
       - ./datasets/gtzan_train_mel_split/
       - ./datasets/gtzan_val_mel_split/
+  train_barlow_twins:
+    cmd: "
+      rm -f
+        ./models/pre_aug_normalize.pth 
+        ./models/encoder.pth
+      && python -m swarm.train
+        --train_dir datasets/gtzan_train_mel_split
+        --val_dir datasets/gtzan_val_mel_split
+        --audio_dir datasets/audioset_train_mel_split
+        --audioset_train_csv_path datasets/audioset_metadata/train.csv
+        --audioset_class_labels_indices_csv_path datasets/audioset_metadata/class_labels_indices.csv
+        --encoder_path ./models/encoder.pth
+        --pre_normalizer_path ./models/pre_normalizer.pth
+    "
+    deps:
+      - src/swarm/augmentations.py
+      - src/swarm/callbacks.py
+      - src/swarm/configs/dataset_gtzan.py
+      - src/swarm/datasets.py
+      - src/swarm/losses.py
+      - src/swarm/models.py
+      - src/swarm/train.py
+      - src/swarm/utils.py
+      - ./datasets/gtzan_train_mel_split/
+      - ./datasets/gtzan_val_mel_split/
+      - ./datasets/audioset_train_mel_split/
+      - ./datasets/audioset_metadata/class_labels_indices.csv
+      - ./datasets/audioset_metadata/train.csv
+    outs:
+      - ./models/encoder.pth
+      - ./models/pre_normalizer.pth

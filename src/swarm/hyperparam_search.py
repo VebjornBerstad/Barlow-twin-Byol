@@ -1,4 +1,5 @@
 import argparse
+from copy import deepcopy
 from dataclasses import dataclass
 from functools import partial
 from pathlib import Path
@@ -14,13 +15,13 @@ import optuna
 from swarm.augmentations import RandomCropWidth, aug_pipeline
 from swarm.callbacks import (EarlyStoppingFromSlopeCallback,
                              LinearOnlineEvaluationCallback)
-from swarm.config import (AugmentationConfig, GtzanConfig, TrainingConfig,
-                          parse_dvc_augmentation_config,
-                          parse_dvc_gtzan_config, parse_dvc_training_config)
+from swarm.configs.augmentations import (AugmentationConfig,
+                                         parse_dvc_augmentation_config)
+from swarm.configs.dataset_gtzan import GtzanConfig, parse_dvc_gtzan_config
+from swarm.configs.training import TrainingConfig, parse_dvc_training_config
 from swarm.datasets import AudiosetDataset, GtzanDataset
 from swarm.models import BarlowTwins, Encoder
 from swarm.utils import linear_evaluation_multiclass
-from copy import deepcopy
 
 
 @dataclass
@@ -69,6 +70,7 @@ def train_barlow_twins(
         xcorr_lambda=trial.suggest_float('xcorr_lambda', 0.0, 2.0),
         emb_dim_size=_training_config.emb_dim_size,
         early_stopping_patience=_training_config.early_stopping_patience,
+        max_epochs=_training_config.max_epochs,
     )
 
     transform = transforms.Compose([
