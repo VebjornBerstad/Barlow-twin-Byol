@@ -19,6 +19,7 @@ class EvaluationResult:
     acc: float
     f1: float
     loss: float
+    model: T.nn.Module
 
 
 class LinearModelMulticlass(T.nn.Module):
@@ -159,7 +160,7 @@ def linear_evaluation_multiclass(
         acc = accuracy(y_hat, y, task="multiclass", num_classes=num_classes)
         f1 = f1_score(y_hat, y, task="multiclass", num_classes=num_classes)
 
-        return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss)
+        return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss, model=best_model)
 
 
 class LinearModelBinaryClass(T.nn.Module):
@@ -297,4 +298,4 @@ def linear_evaluation_binary_class(
         acc = accuracy(y_hat, y, task="binary")
         f1 = f1_score(y_hat, y, task="binary")
 
-        return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss)
+        return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss, model=best_model)
