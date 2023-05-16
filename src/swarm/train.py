@@ -25,8 +25,7 @@ class Config:
     audio_dir: Path
     audioset_train_csv_path: Path
     audioset_class_labels_indices_csv_path: Path
-    encoder_path: Path
-    pre_normalizer_path: Path
+    model_path: Path
 
 
 def parse_args() -> Config:
@@ -36,8 +35,7 @@ def parse_args() -> Config:
     parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.', required=True)
     parser.add_argument('--audioset_train_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
     parser.add_argument('--audioset_class_labels_indices_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
-    parser.add_argument('--encoder_path', type=Path, help='The output path for the encoder model.', required=True)
-    parser.add_argument('--pre_normalizer_path', type=Path, help='The output path for the pre-normalization model.', required=True)
+    parser.add_argument('--model_path', type=Path, help='The output path for the encoder model.', required=True)
     args = parser.parse_args()
     return Config(**vars(args))
 
@@ -49,10 +47,8 @@ def main():
     gtzan_config = parse_dvc_gtzan_config()
 
     # Set up model folder.
-    if not config.encoder_path.exists():
-        config.encoder_path.parent.mkdir(parents=True, exist_ok=True)
-    if not config.pre_normalizer_path.exists():
-        config.pre_normalizer_path.parent.mkdir(parents=True, exist_ok=True)
+    if not config.model_path.exists():
+        config.model_path.parent.mkdir(parents=True, exist_ok=True)
 
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
@@ -138,11 +134,10 @@ def main():
     best_model: BarlowTwins = early_stopping.best_module  # type: ignore
     best_encoder = best_model.target[0]
 
-    # Save the encoder
-    T.save(best_encoder, config.encoder_path)
+    model = T.nn.Sequential(pre_aug_normalize, best_encoder).eval()
 
-    # Save the pre-augmentation normalization
-    T.save(pre_aug_normalize, config.pre_normalizer_path)
+    # Save the encoder
+    T.save(model, config.model_path)
 
 
 if __name__ == '__main__':

@@ -5,19 +5,17 @@ from pathlib import Path
 import torch as T
 import torchvision.transforms as TV_transforms
 
-from swarm.augmentations import Normalize, RandomCropWidth
+from swarm.augmentations import RandomCropWidth
 from swarm.configs.augmentations import parse_dvc_augmentation_config
 from swarm.configs.training import parse_dvc_training_config
 from swarm.configs.dataset_gtzan import parse_dvc_gtzan_config
 from swarm.datasets import GtzanDataset
-from swarm.models import Encoder
 from swarm.utils import linear_evaluation_multiclass
 
 
 @dataclass
 class Config:
-    encoder_path: Path
-    pre_normalizer_path: Path
+    model_path: Path
     gtzan_path_train: Path
     gtzan_path_test: Path
     linear_eval_model_path: Path
@@ -25,8 +23,7 @@ class Config:
 
 def parse_args() -> Config:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--encoder_path', type=Path, help='The path to the encoder model.', required=True)
-    parser.add_argument('--pre_normalizer_path', type=Path, help='The path to the pre-normalization model.', required=True)
+    parser.add_argument('--model_path', type=Path, help='The path to the encoder model.', required=True)
     parser.add_argument('--gtzan_path_train', type=Path, help='The path to the data to train on.', required=True)
     parser.add_argument('--gtzan_path_test', type=Path, help='The path to the data to test on.', required=True)
     parser.add_argument('--linear_eval_model_path', type=Path, help='The output path for the linear evaluation model.', required=True)
@@ -42,11 +39,7 @@ def main():
 
     device = T.device('cuda' if T.cuda.is_available() else 'cpu')
 
-    encoder: Encoder = T.load(config.encoder_path)
-    pre_normalizer: Normalize = T.load(config.pre_normalizer_path)
-
-    model = T.nn.Sequential(pre_normalizer, encoder).eval().to(device)
-
+    model = T.load(config.model_path).to(device)
     transforms = TV_transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
     ])

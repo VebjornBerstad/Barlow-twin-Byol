@@ -55,17 +55,14 @@ stages:
       - ./datasets/gtzan_val_mel_split/
   train_barlow_twins:
     cmd: "
-      rm -f
-        ./models/pre_aug_normalize.pth 
-        ./models/encoder.pth
+      rm -f ./models/model.pth
       && python -m swarm.train
         --train_dir datasets/gtzan_train_mel_split
         --val_dir datasets/gtzan_val_mel_split
         --audio_dir datasets/audioset_train_mel_split
         --audioset_train_csv_path datasets/audioset_metadata/train.csv
         --audioset_class_labels_indices_csv_path datasets/audioset_metadata/class_labels_indices.csv
-        --encoder_path ./models/encoder.pth
-        --pre_normalizer_path ./models/pre_normalizer.pth
+        --model_path ./models/model.pth
     "
     deps:
       - src/swarm/augmentations.py
@@ -86,14 +83,12 @@ stages:
       - augmentations
       - datasets.gtzan
     outs:
-      - ./models/encoder.pth
-      - ./models/pre_normalizer.pth
+      - ./models/model.pth
   eval_barlow_twins:
     cmd: "
       rm -rf ./models/linear_eval_model.pth
       && python -m swarm.test
-        --encoder_path ./models/encoder.pth
-        --pre_normalizer_path ./models/pre_normalizer.pth
+        --model_path ./models/model.pth
         --gtzan_path_train ./datasets/gtzan_train_mel_split
         --gtzan_path_test ./datasets/gtzan_val_mel_split
         --linear_eval_model_path ./models/linear_eval_model.pth
@@ -107,8 +102,7 @@ stages:
       - src/swarm/losses.py
       - src/swarm/test.py
       - src/swarm/utils.py
-      - ./models/encoder.pth
-      - ./models/pre_normalizer.pth
+      - ./models/model.pth
       - ./datasets/gtzan_train_mel_split/
       - ./datasets/gtzan_val_mel_split/
     params:
