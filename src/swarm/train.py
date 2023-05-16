@@ -24,17 +24,17 @@ class Config:
     audio_dir: Path
     audioset_train_csv_path: Path
     audioset_class_labels_indices_csv_path: Path
-    model_path: Path
+    model_dir: Path
 
 
 def parse_args() -> Config:
     parser = argparse.ArgumentParser()
-    parser.add_argument('--train_dir', type=Path, help="The input directory containing the GTZAN dataset WAV files.")
-    parser.add_argument('--val_dir', type=Path, help='The output directory to save the training dataset.')
-    parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.')
-    parser.add_argument('--audioset_train_csv_path', type=Path, help='The output directory to save the validation dataset.')
-    parser.add_argument('--audioset_class_labels_indices_csv_path', type=Path, help='The output directory to save the validation dataset.')
-    parser.add_argument('--model_path', type=Path, help='The output directory to save the validation dataset.')
+    parser.add_argument('--train_dir', type=Path, help="The input directory containing the GTZAN dataset WAV files.", required=True)
+    parser.add_argument('--val_dir', type=Path, help='The output directory to save the training dataset.', required=True)
+    parser.add_argument('--audio_dir', type=Path, help='The output directory to save the validation dataset.', required=True)
+    parser.add_argument('--audioset_train_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
+    parser.add_argument('--audioset_class_labels_indices_csv_path', type=Path, help='The output directory to save the validation dataset.', required=True)
+    parser.add_argument('--model_dir', type=Path, help='The output directory to save the validation dataset.', required=True)
     args = parser.parse_args()
     return Config(**vars(args))
 
@@ -46,8 +46,8 @@ def main():
     gtzan_config = parse_dvc_gtzan_config()
 
     # Set up model folder.
-    if not config.model_path.exists():
-        config.model_path.mkdir(parents=True, exist_ok=True)
+    if not config.model_dir.exists():
+        config.model_dir.mkdir(parents=True, exist_ok=True)
 
     transform = transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
