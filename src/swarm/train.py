@@ -139,10 +139,10 @@ def main():
     best_encoder = best_model.target[0]
 
     # Save the encoder
-    T.save(best_encoder.state_dict(), config.encoder_path)
+    T.save(best_encoder, config.encoder_path)
 
     # Save the pre-augmentation normalization
-    T.save(pre_aug_normalize.state_dict(), config.pre_normalizer_path)
+    T.save(pre_aug_normalize, config.pre_normalizer_path)
 
 
 if __name__ == '__main__':
