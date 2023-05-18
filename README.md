@@ -32,7 +32,7 @@ source venv/bin/activate
 # source venv/Scripts/activate  # Use this for Windows.
 
 # Install a Python dependencies.
-python3 install -e .
+python3 install .
 # pip install -e .[dev]  # Use this instead for development.
 ```
 
@@ -45,7 +45,7 @@ The project is set up with DVC. As such, you can reproduce everything by running
 - Train a Barlow twins model on Audioset
 - Run a linear evaluation on GTZAN
 - Report test results
-- 
+
 ### Training
 
 Work in progress
