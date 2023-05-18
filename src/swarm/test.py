@@ -79,10 +79,10 @@ def main():
         f1 = f1_score(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro').item()
         auc = auroc(y_hats, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro')
 
-        print(f"Linear evaluation loss: {loss}")
-        print(f"Linear evaluation accuracy: {acc}")
-        print(f"Linear evaluation f1: {f1}")
-        print(f"Linear evaluation auc: {auc}")
+        print(f"Linear evaluation loss:     {loss: 3.4f} ({loss})")
+        print(f"Linear evaluation accuracy: {acc: 3.4f} ({acc})")
+        print(f"Linear evaluation f1:       {f1: 3.4f} ({f1})")
+        print(f"Linear evaluation auc:      {auc: 3.4f} ({auc})")
 
 
 if __name__ == '__main__':
