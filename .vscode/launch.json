@@ -63,12 +63,12 @@
             "justMyCode": true,
             "args": [
                 "--train_dir", "datasets/gtzan_train_mel_split",
-                "--val_dir", "datasets/gtzan_val_mel_split",
+                // "--val_dir", "datasets/gtzan_val_mel_split",
                 "--audio_dir", "datasets/audioset_train_mel_split",
                 "--audioset_train_csv_path", "datasets/audioset_metadata/train.csv",
                 "--audioset_class_labels_indices_csv_path", "datasets/audioset_metadata/class_labels_indices.csv",
-                "--encoder_path", "./models/encoder.pth",
-                "--pre_normalizer_path", "./models/pre_normalizer.pth",
+                // "--encoder_path", "./models/encoder.pth",
+                // "--pre_normalizer_path", "./models/pre_normalizer.pth",
                 "--model_path", "./models/model.pth",
             ]
         },

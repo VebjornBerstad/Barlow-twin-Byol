@@ -1,17 +1,19 @@
 import argparse
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
 import torch as T
 import torchvision.transforms as TV_transforms
-
-from swarm.augmentations import RandomCropWidth
-from swarm.configs.augmentations import parse_dvc_augmentation_config
-from swarm.configs.training import parse_dvc_training_config
-from swarm.configs.dataset_gtzan import parse_dvc_gtzan_config
-from swarm.datasets import GtzanDataset
-from swarm.utils import linear_evaluation_multiclass
 from torch.utils.data import random_split
+
+from swarm.augmentations import Normalize, RandomCropWidth
+from swarm.configs.augmentations import parse_dvc_augmentation_config
+from swarm.configs.dataset_gtzan import parse_dvc_gtzan_config
+from swarm.configs.training import parse_dvc_training_config
+from swarm.datasets import GtzanDataset
+from swarm.models import Encoder
+from swarm.utils import linear_evaluation_multiclass
 
 
 @dataclass
@@ -38,7 +40,18 @@ def main():
 
     device = T.device('cuda' if T.cuda.is_available() else 'cpu')
 
-    model = T.load(config.model_path).to(device)
+    model_weights = T.load(config.model_path)
+    with open(config.model_path.with_suffix('.json'), 'r') as fp:
+        model_config = json.load(fp)
+    X_train_example = T.randn(model_config['X_train_example_shape'])
+    model = T.nn.Sequential(Normalize(), Encoder(
+        X_train_example=X_train_example,
+        device=device,
+        emb_dim_size=model_config['emb_dim_size'],
+        in_channels=model_config['in_channels'],
+    )).to(device)
+    model.load_state_dict(model_weights)
+
     transforms = TV_transforms.Compose([
         RandomCropWidth(target_frames=augmentation_config.rcw_target_frames),  # 96
     ])
@@ -62,7 +75,7 @@ def main():
     print(f"Linear evaluation f1: {eval_res.f1}")
 
     # Save the model.
-    T.save(eval_res.model.cpu(), config.linear_eval_model_path)
+    T.save(eval_res.model.cpu().state_dict(), config.linear_eval_model_path)
 
 
 if __name__ == '__main__':

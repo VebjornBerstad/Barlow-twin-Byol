@@ -55,7 +55,7 @@ stages:
       - ./datasets/gtzan_val_mel_split/
   train_barlow_twins:
     cmd: "
-      rm -f ./models/model.pth
+      rm -f ./models/model.pth ./models/model.json
       && python -m swarm.train
         --train_dir datasets/gtzan_train_mel_split
         --audio_dir datasets/audioset_train_mel_split
@@ -82,6 +82,7 @@ stages:
       - datasets.gtzan
     outs:
       - ./models/model.pth
+      - ./models/model.json
   train_linear_eval:
     cmd: "
       rm -rf ./models/linear_eval_model.pth
@@ -100,6 +101,7 @@ stages:
       - src/swarm/linear_eval.py
       - src/swarm/utils.py
       - ./models/model.pth
+      - ./models/model.json
       - ./datasets/gtzan_train_mel_split/
     params:
       - training
@@ -118,5 +120,6 @@ stages:
       - src/swarm/test.py
       - src/swarm/configs/augmentations.py
       - ./models/model.pth
+      - ./models/model.json
       - ./models/linear_eval_model.pth
       - ./datasets/gtzan_val_mel_split/

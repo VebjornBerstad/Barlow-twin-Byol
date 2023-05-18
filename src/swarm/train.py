@@ -1,4 +1,5 @@
 import argparse
+import json
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -144,7 +145,18 @@ def main():
     best_model: BarlowTwins = early_stopping.best_module  # type: ignore
     best_encoder = best_model.target[0]
     model = T.nn.Sequential(pre_aug_normalize, best_encoder).eval()
-    T.save(model.cpu(), config.model_path)
+    T.save(model.cpu().state_dict(), config.model_path)
+
+    with open(config.model_path.with_suffix('.json'), 'w') as f:
+        json.dump(
+            obj={
+                "X_train_example_shape": list(X_train_example.shape),
+                "emb_dim_size": training_config.emb_dim_size,
+                "in_channels": 1,
+            },
+            fp=f,
+            indent=4,
+        )
 
 
 if __name__ == '__main__':
