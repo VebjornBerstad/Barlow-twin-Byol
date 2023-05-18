@@ -46,8 +46,8 @@ def main():
     gtzan_test_dataset = GtzanDataset(config.gtzan_path_test, transforms=transforms)
     dataloader = DataLoader(gtzan_test_dataset, batch_size=512, shuffle=False)
 
-    encoder = T.load(config.model_path).to(device)
-    linear_eval_model = T.load(config.linear_eval_model_path).to(device)
+    encoder = T.load(config.model_path, map_location=T.device('cpu')).to(device)
+    linear_eval_model = T.load(config.linear_eval_model_path, map_location=T.device('cpu')).to(device)
 
     with T.no_grad():
         loss_fn = T.nn.functional.cross_entropy
