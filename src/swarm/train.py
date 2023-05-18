@@ -144,7 +144,7 @@ def main():
     best_model: BarlowTwins = early_stopping.best_module  # type: ignore
     best_encoder = best_model.target[0]
     model = T.nn.Sequential(pre_aug_normalize, best_encoder).eval()
-    T.save(model, config.model_path)
+    T.save(model.cpu(), config.model_path)
 
 
 if __name__ == '__main__':

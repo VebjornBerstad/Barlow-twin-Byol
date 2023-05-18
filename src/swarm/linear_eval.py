@@ -62,7 +62,7 @@ def main():
     print(f"Linear evaluation f1: {eval_res.f1}")
 
     # Save the model.
-    T.save(eval_res.model, config.linear_eval_model_path)
+    T.save(eval_res.model.cpu(), config.linear_eval_model_path)
 
 
 if __name__ == '__main__':
