@@ -75,9 +75,9 @@ def main():
         y_actual = T.tensor(y_actual)
 
         # Calculate multiclass acc.
-        acc = accuracy(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes).item()
-        f1 = f1_score(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes).item()
-        auc = auroc(y_hats, y_actual, task='multiclass', num_classes=gtzan_config.num_classes)
+        acc = accuracy(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro').item()
+        f1 = f1_score(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro').item()
+        auc = auroc(y_hats, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro')
 
         print(f"Linear evaluation loss: {loss}")
         print(f"Linear evaluation accuracy: {acc}")
