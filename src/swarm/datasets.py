@@ -34,13 +34,13 @@ class GtzanDataset(Dataset):
         """
         self.main_dir = main_dir
         self.transforms = transforms
-        self.class_names = os.listdir(main_dir)
+        self.class_names = sorted(os.listdir(main_dir))
         self.file_list = []
         self.label_list = []
 
         for idx, class_name in enumerate(self.class_names):
             class_dir = os.path.join(main_dir, class_name)
-            file_names = os.listdir(class_dir)
+            file_names = sorted(os.listdir(class_dir))
             self.file_list.extend([os.path.join(class_dir, f) for f in file_names])
             self.label_list.extend([idx] * len(file_names))
 
