@@ -157,8 +157,8 @@ def linear_evaluation_multiclass(
         val_loss = sum(val_losses) / len(val_losses)
         y_hat = T.tensor(y_hat)
         y = T.tensor(y)
-        acc = accuracy(y_hat, y, task="multiclass", num_classes=num_classes)
-        f1 = f1_score(y_hat, y, task="multiclass", num_classes=num_classes)
+        acc = accuracy(y_hat, y, task="multiclass", num_classes=num_classes, average='macro')
+        f1 = f1_score(y_hat, y, task="multiclass", num_classes=num_classes, average='macro')
 
         return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss, model=best_model)
 
@@ -295,7 +295,7 @@ def linear_evaluation_binary_class(
         val_loss = sum(val_losses) / len(val_losses)
         y_hat = T.tensor(y_hat)
         y = T.tensor(y)
-        acc = accuracy(y_hat, y, task="binary")
-        f1 = f1_score(y_hat, y, task="binary")
+        acc = accuracy(y_hat, y, task="binary", average='macro')
+        f1 = f1_score(y_hat, y, task="binary", average='macro')
 
         return EvaluationResult(acc=acc.item(), f1=f1.item(), loss=val_loss, model=best_model)

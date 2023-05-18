@@ -46,8 +46,8 @@ def main():
     gtzan_test_dataset = GtzanDataset(config.gtzan_path_test, transforms=transforms)
     dataloader = DataLoader(gtzan_test_dataset, batch_size=512, shuffle=False)
 
-    encoder = T.load(config.model_path).to(device)
-    linear_eval_model = T.load(config.linear_eval_model_path).to(device)
+    encoder = T.load(config.model_path, map_location=T.device('cpu')).to(device)
+    linear_eval_model = T.load(config.linear_eval_model_path, map_location=T.device('cpu')).to(device)
 
     with T.no_grad():
         loss_fn = T.nn.functional.cross_entropy
@@ -75,9 +75,9 @@ def main():
         y_actual = T.tensor(y_actual)
 
         # Calculate multiclass acc.
-        acc = accuracy(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes).item()
-        f1 = f1_score(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes).item()
-        auc = auroc(y_hats, y_actual, task='multiclass', num_classes=gtzan_config.num_classes)
+        acc = accuracy(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro').item()
+        f1 = f1_score(y_preds, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro').item()
+        auc = auroc(y_hats, y_actual, task='multiclass', num_classes=gtzan_config.num_classes, average='macro')
 
         print(f"Linear evaluation loss: {loss}")
         print(f"Linear evaluation accuracy: {acc}")

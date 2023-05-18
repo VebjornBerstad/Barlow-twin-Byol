@@ -141,7 +141,7 @@ def train_barlow_twins(
         augmentations=pre_aug_normalize,
     )
     early_stopping = EarlyStoppingFromSlopeCallback(
-        metric_name='gtzan_val_loss',
+        metric_name='val_loss',
         direction=EarlyStoppingFromSlopeCallback.DIRECTION_MINIMIZE,
         patience=training_config.early_stopping_patience,
     )
@@ -151,7 +151,7 @@ def train_barlow_twins(
     trainer = Trainer(
         devices=1,
         accelerator='gpu',
-        max_epochs=1,
+        max_epochs=training_config.max_epochs,
         callbacks=[
             linear_evaluation,
             early_stopping,
