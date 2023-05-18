@@ -145,7 +145,8 @@ def main():
     best_model: BarlowTwins = early_stopping.best_module  # type: ignore
     best_encoder = best_model.target[0]
     model = T.nn.Sequential(pre_aug_normalize, best_encoder).eval()
-    T.save(model.cpu().state_dict(), config.model_path)
+    sd = model.cpu().state_dict()
+    T.save(sd, config.model_path)
 
     with open(config.model_path.with_suffix('.json'), 'w') as f:
         json.dump(

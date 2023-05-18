@@ -44,11 +44,11 @@ class Normalize(T.nn.Module):
             eps: A small value to avoid division by zero.
         """
         super(Normalize, self).__init__()
-        self.eps = eps
+        self.eps = T.nn.Parameter(T.tensor([eps], dtype=T.float32), requires_grad=False)
+        self.examples_seen = T.nn.Parameter(T.tensor([0], dtype=T.long), requires_grad=False)
 
-        self.mean: T.Tensor = T.tensor([0.0], requires_grad=False)
-        self.std: T.Tensor = T.tensor([1.0], requires_grad=False)
-        self.examples_seen: int = 0
+        self.mean: T.Tensor = T.nn.Parameter(T.tensor([0.0]), requires_grad=False)
+        self.std: T.Tensor = T.nn.Parameter(T.tensor([1.0]), requires_grad=False)
 
     def forward(self, x: T.Tensor) -> T.Tensor:
         """Normalize the input tensor along the channel dimension.
@@ -62,18 +62,16 @@ class Normalize(T.nn.Module):
 
         # TODO: Consider using weights instead of directly multiplying by self.examples_seen and batch_size.
 
+        x = x.to(self.mean.device)
         batch_size = x.shape[0]
 
-        batch_mean = T.mean(x, dim=(0, 2, 3), keepdim=True)
-        self.mean = self.mean.to(x.device)
-        self.mean = (self.mean * self.examples_seen + batch_mean * batch_size) / (self.examples_seen + batch_size)
+        batch_mean = T.mean(x, dim=(0, 2, 3))
+        self.mean.data = ((self.mean * self.examples_seen + batch_mean * batch_size) / (self.examples_seen + batch_size)).data
 
-        batch_std = T.std(x, dim=(0, 2, 3), unbiased=False, keepdim=True).to(x.device) + self.eps
-        self.std = self.std.to(x.device)
-        self.std = (self.std * self.examples_seen + batch_std * batch_size) / (self.examples_seen + batch_size)
+        batch_std = T.std(x, dim=(0, 2, 3), unbiased=False) + self.eps
+        self.std.data = ((self.std * self.examples_seen + batch_std * batch_size) / (self.examples_seen + batch_size)).data
 
         self.examples_seen += batch_size
-
         return (x - self.mean) / (self.std + self.eps)
 
 
